@@ -731,7 +731,7 @@ bool VolumeRenderWidget::hasData() const
  */
 const QVector4D VolumeRenderWidget::getVolumeResolution() const
 {
-    if (_volumerender.hasData() == false)
+    if (!_volumerender.hasData())
         return QVector4D();
 
     return QVector4D(_volumerender.getResolution().at(0),
@@ -1232,6 +1232,29 @@ void VolumeRenderWidget::setBackgroundColor(const QColor col)
     _volumerender.setBackground(color);
     this->updateView();
 }
+
+
+/**
+ * @brief VolumeRenderWidget::setBBox
+ * @param botLeft
+ * @param botLeft
+ */
+void VolumeRenderWidget::setBBox(QVector3D botLeft, QVector3D topRight)
+{
+    botLeft = botLeft / QVector3D(_volumerender.getResolution().at(0),
+                                  _volumerender.getResolution().at(1),
+                                  _volumerender.getResolution().at(2));
+    botLeft = botLeft * 2.f - QVector3D(1.f, 1.f, 1.f);
+    topRight = topRight / QVector3D(_volumerender.getResolution().at(0),
+                                    _volumerender.getResolution().at(1),
+                                    _volumerender.getResolution().at(2));
+    topRight = topRight * 2.f - QVector3D(1.f, 1.f, 1.f);
+//    qDebug() << botLeft << topRight;
+    _volumerender.setBBox(botLeft.x(), botLeft.y(), botLeft.z(),
+                          topRight.x(), topRight.y(), topRight.z());
+    updateView();
+}
+
 
 /**
  * @brief VolumeRenderWidget::updateHistogram

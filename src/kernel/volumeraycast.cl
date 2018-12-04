@@ -393,6 +393,8 @@ __kernel void volumeRender(  __read_only image3d_t volData
                            , __read_only image2d_t inHitImg
                            , __write_only image2d_t outHitImg
                            , const uint imgEss
+                           , const float3 bbox_bl
+                           , const float3 bbox_tr
                            )
 {
     int2 globalId = (int2)(get_global_id(0), get_global_id(1));
@@ -468,7 +470,7 @@ __kernel void volumeRender(  __read_only image3d_t volData
     float tfar = FLT_MAX;
     int hit = 0;
     // bbox from (-1,-1,-1) to (+1,+1,+1)
-    hit = intersectBox(camPos, rayDir, &tnear, &tfar);
+    hit = intersectBBox(camPos, rayDir, bbox_bl, bbox_tr, &tnear, &tfar);
     if (!hit || tfar < 0)
     {
         write_imagef(outImg, texCoords, background);

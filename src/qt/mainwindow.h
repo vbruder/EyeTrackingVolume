@@ -49,7 +49,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow(QWidget *parent = 0);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
 protected slots:
@@ -71,6 +71,9 @@ protected slots:
     void setLoopTimesteps();
     void nextTimestep();
     void setPlaybackSpeed(int speed);
+    void updateBBox();
+    void updateClippingSliders();
+    void resetBBox();
 protected:
     void dragEnterEvent(QDragEnterEvent *ev) Q_DECL_OVERRIDE;
     void dropEvent(QDropEvent *ev) Q_DECL_OVERRIDE;

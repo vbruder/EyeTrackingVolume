@@ -176,12 +176,23 @@ void DatRawReader::read_dat(const std::string &dat_file_name)
             }
             else if (name.find("Format") != std::string::npos && l.size() > 1u)
             {
-                _prop.format = l.at(1);
+                _prop.format.clear();
+                for (const auto &s : l)
+                {
+                    if (s.find("Format") == std::string::npos)
+                        _prop.format.push_back(s);
+                }
             }
             else if ((   name.find("ChannelOrder") != std::string::npos
                       || name.find("ObjectModel") != std::string::npos) && l.size() > 1u)
             {
-                _prop.image_channel_order = l.at(1);
+                _prop.image_channel_order.clear();
+                for (const auto &s : l)
+                {
+                    if (s.find("ObjectModel") == std::string::npos
+                            && s.find("ChannelOrder") == std::string::npos)
+                        _prop.image_channel_order.push_back(s);
+                }
             }
             else if (name.find("Nodes") != std::string::npos && l.size() > 1u)
             {
@@ -282,7 +293,7 @@ void DatRawReader::read_raw(const std::string raw_file_name)
         // get length of file:
         is.seekg(0, is.end);
 //#ifdef _WIN32
-//        // HACK: to support files bigger than 2048 MB on windows -> fixed with VS 2017?
+//        // HACK: to support files bigger than 2048 MB on windows -> fixed with VS 2017.x?
 //        _prop.raw_file_size = *(__int64 *)(((char *)&(is.tellg())) + 8);
 //#else
         _prop.raw_file_size = static_cast<size_t>(is.tellg());
@@ -295,7 +306,7 @@ void DatRawReader::read_raw(const std::string raw_file_name)
         std::array<double, 256> histo;
         histo.fill(0.);
         // if float precision: change endianness to little endian
-        if (_prop.format == "FLOAT")
+        if (_prop.format.front() == "FLOAT")
         {
             std::vector<float> floatdata(_prop.raw_file_size / sizeof(float));
             is.read(reinterpret_cast<char*>(floatdata.data()),
@@ -305,7 +316,7 @@ void DatRawReader::read_raw(const std::string raw_file_name)
             {
                 // swap endianness to little endian
                 endswap(&floatdata.at(i));
-                float value = floatdata.at(i); // /217.762f; // FIXME: gaze data range
+                float value = floatdata.at(i) / 218.347f; // FIXME: gaze data range
                 // FIXME: assuming normalized values [0,1] here...
                 size_t bin = static_cast<size_t>(round(value * 256.f));
                 bin = std::min(bin, 255ul);
@@ -370,15 +381,15 @@ void DatRawReader::read_raw(const std::string raw_file_name)
         switch (bytes)
         {
         case 1:
-            _prop.format = "UCHAR";
+            _prop.format.front() = "UCHAR";
             std::cout << "Format determined as UCHAR." << std::endl;
             break;
         case 2:
-            _prop.format = "USHORT";
+            _prop.format.front() = "USHORT";
             std::cout << "Format determined as USHORT." << std::endl;
             break;
         case 4:
-            _prop.format = "FLOAT";
+            _prop.format.front() = "FLOAT";
             std::cout << "Format determined as FLOAT." << std::endl;
             break;
         default: throw std::runtime_error("Could not resolve missing format specification.");
@@ -396,14 +407,14 @@ void DatRawReader::infer_volume_resolution(unsigned long long file_size)
     if (_prop.format.empty())
     {
         std::cout << "WARNING: Format could not be determined, assuming UCHAR" << std::endl;
-        _prop.format = "UCHAR";
+        _prop.format.front() = "UCHAR";
     }
 
-    if (_prop.format == "UCHAR")
+    if (_prop.format.front() == "UCHAR")
         file_size /= sizeof(unsigned char);
-    else if (_prop.format == "USHORT")
+    else if (_prop.format.front() == "USHORT")
         file_size /= sizeof(unsigned short);
-    else if (_prop.format == "FLOAT")
+    else if (_prop.format.front() == "FLOAT")
         file_size /= sizeof(float);
 
     unsigned int cuberoot = static_cast<unsigned int>(std::cbrt(file_size));

@@ -180,6 +180,8 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
         _raycastKernel.setArg(CONTOURS, 0);             // contour lines off by default
         _raycastKernel.setArg(AERIAL, 0);               // aerial perspective off by defualt
         _raycastKernel.setArg(IMG_ESS, 0);
+        _raycastKernel.setArg(BBOX_BL, cl_float3{{-1.f, -1.f, -1.f}});
+        _raycastKernel.setArg(BBOX_TR, cl_float3{{1.f, 1.f, 1.f}});
 
         _genBricksKernel = cl::Kernel(program, "generateBricks");
         _downsamplingKernel = cl::Kernel(program, "downsampling");
@@ -256,14 +258,14 @@ const std::string VolumeRenderCL::volumeDownsampling(const size_t t, const int f
     format.image_channel_order = CL_R;
     unsigned int formatMultiplier = 1;
 
-    if (_dr.properties().format == "UCHAR")
+    if (_dr.properties().format.front() == "UCHAR")
         format.image_channel_data_type = CL_UNORM_INT8;
-    else if (_dr.properties().format == "USHORT")
+    else if (_dr.properties().format.front() == "USHORT")
     {
         format.image_channel_data_type = CL_UNORM_INT16;
         formatMultiplier = 2;
     }
-    else if (_dr.properties().format == "FLOAT")
+    else if (_dr.properties().format.front() == "FLOAT")
     {
         format.image_channel_data_type = CL_FLOAT;
         formatMultiplier = 4;
@@ -319,7 +321,7 @@ const std::string VolumeRenderCL::volumeDownsampling(const size_t t, const int f
                 << _dr.properties().slice_thickness.at(1) << " "
                 << _dr.properties().slice_thickness.at(2)
                 << "\n";
-        datFile << "Format: \t\t\t" << _dr.properties().format << "\n";
+        datFile << "Format: \t\t\t" << _dr.properties().format.front() << "\n";
         datFile.close();
         std::cout << " Done." << std::endl;
         return rawname;
@@ -559,18 +561,20 @@ void VolumeRenderCL::generateBricks()
         cl::ImageFormat format;
         format.image_channel_order = CL_RG;  // NOTE: CL_RG for min+max
 
-        if (_dr.properties().format == "UCHAR")
-            format.image_channel_data_type = CL_UNORM_INT8;
-        else if (_dr.properties().format == "USHORT")
-            format.image_channel_data_type = CL_UNORM_INT16;
-        else if (_dr.properties().format == "FLOAT")
-            format.image_channel_data_type = CL_FLOAT;
-        else
-            throw std::invalid_argument("Unknown or invalid volume data format.");
-
         _bricksMem.clear();
         for (size_t i = 0; i < _dr.properties().raw_file_names.size(); ++i)
         {
+            std::string formatStr = _dr.properties().format.size() == 1 ?
+                                    _dr.properties().format.front() : _dr.properties().format.at(i);
+            if (formatStr == "UCHAR")
+                format.image_channel_data_type = CL_UNORM_INT8;
+            else if (formatStr == "USHORT")
+                format.image_channel_data_type = CL_UNORM_INT16;
+            else if (formatStr == "FLOAT")
+                format.image_channel_data_type = CL_FLOAT;
+            else
+                throw std::invalid_argument("Unknown or invalid volume data format.");
+
             _bricksMem.push_back(cl::Image3D(_contextCL,
                                              CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS,
                                              format,
@@ -614,39 +618,40 @@ void VolumeRenderCL::volDataToCLmem(const std::vector<std::vector<char>> &volume
     try
     {
         cl::ImageFormat format;
-        auto co = _dr.properties().image_channel_order;
-        if (co == "R" || co == "")
-            format.image_channel_order = CL_R;
-        else if (co == "RG")
-            format.image_channel_order = CL_RG;
-//        else if (co == "RGB")   // This format can only be used if channel data type = CL_UNORM_SHORT_565, CL_UNORM_SHORT_555 or CL_UNORM_INT101010.
-//            format.image_channel_order = CL_RGB;
-        else if (co == "RGBA")
-            format.image_channel_order = CL_RGBA;
-        else if (co == "ARGB")
-            format.image_channel_order = CL_ARGB;
-        else if (co == "BGRA")
-            format.image_channel_order = CL_BGRA;
-
-        unsigned int formatMultiplier = sizeof(cl_uchar);
-        if (_dr.properties().format == "UCHAR")
-            format.image_channel_data_type = CL_UNORM_INT8;
-        else if (_dr.properties().format == "USHORT")
-        {
-            format.image_channel_data_type = CL_UNORM_INT16;
-            formatMultiplier = sizeof(cl_ushort);
-        }
-        else if (_dr.properties().format == "FLOAT")
-        {
-            format.image_channel_data_type = CL_FLOAT;
-            formatMultiplier = sizeof(cl_float);
-        }
-        else
-            throw std::invalid_argument("Unknown or invalid volume data format.");
-
         _volumesMem.clear();
+        size_t i = 0;
         for (const auto &v : volumeData)
-        {
+        {            
+            auto co = _dr.properties().image_channel_order.at(i);
+            if (co == "R" || co == "")
+                format.image_channel_order = CL_R;
+            else if (co == "RG")
+                format.image_channel_order = CL_RG;
+    //        else if (co == "RGB")   // This format can only be used if channel data type = CL_UNORM_SHORT_565, CL_UNORM_SHORT_555 or CL_UNORM_INT101010.
+    //            format.image_channel_order = CL_RGB;
+            else if (co == "RGBA")
+                format.image_channel_order = CL_RGBA;
+            else if (co == "ARGB")
+                format.image_channel_order = CL_ARGB;
+            else if (co == "BGRA")
+                format.image_channel_order = CL_BGRA;
+
+            unsigned int formatMultiplier = sizeof(cl_uchar);
+            if (_dr.properties().format.at(i) == "UCHAR")
+                format.image_channel_data_type = CL_UNORM_INT8;
+            else if (_dr.properties().format.at(i) == "USHORT")
+            {
+                format.image_channel_data_type = CL_UNORM_INT16;
+                formatMultiplier = sizeof(cl_ushort);
+            }
+            else if (_dr.properties().format.at(i) == "FLOAT")
+            {
+                format.image_channel_data_type = CL_FLOAT;
+                formatMultiplier = sizeof(cl_float);
+            }
+            else
+                throw std::invalid_argument("Unknown or invalid volume data format.");
+
             if(_dr.properties().volume_res[0] * _dr.properties().volume_res[1] *
                      _dr.properties().volume_res[2] * formatMultiplier > v.size())
             {
@@ -661,6 +666,11 @@ void VolumeRenderCL::volDataToCLmem(const std::vector<std::vector<char>> &volume
                                               _dr.properties().volume_res[2],
                                               0, 0,
                                               const_cast<char*>(v.data())));
+            // id for multi volume non timeseries data
+            if (_dr.properties().format.size() == 1)
+                i = 0;
+            else
+                i++;
         }
     }
     catch (cl::Error err)
@@ -732,14 +742,17 @@ const std::array<unsigned int, 4> VolumeRenderCL::getResolution() const
     return _dr.properties().volume_res;
 }
 
+/**
+ * @brief VolumeRenderCL::getHistogram
+ * @param timestep
+ * @return
+ */
 const std::array<double, 256> & VolumeRenderCL::getHistogram(unsigned int timestep)
 {
     if (!_dr.has_data())
         throw std::invalid_argument("Invalid timestep for histogram data.");
     return _dr.getHistogram(timestep);
 }
-
-
 
 /**
  * @brief VolumeRenderCL::setTransferFunction
@@ -993,4 +1006,24 @@ const std::vector<std::string> VolumeRenderCL::getDeviceNames(size_t platformId,
 const std::string VolumeRenderCL::getCurrentDeviceName()
 {
     return _currentDevice;
+}
+
+/**
+ * @brief VolumeRenderCL::setBBox
+ * @param bl_x  Bottom left x coord
+ * @param bl_y  Bottom left y coord
+ * @param bl_z  Bottom left z coord
+ * @param tr_x  Top right x coord
+ * @param tr_y  Top right y coord
+ * @param tr_z  Top right z coord
+ */
+void VolumeRenderCL::setBBox(float bl_x, float bl_y, float bl_z,
+                             float tr_x, float tr_y, float tr_z)
+{
+    cl_float3 bl = {{bl_x, bl_y, bl_z}};
+    cl_float3 tr = {{tr_x, tr_y, tr_z}};
+    try {
+        _raycastKernel.setArg(BBOX_BL, bl);
+        _raycastKernel.setArg(BBOX_TR, tr);
+    } catch (cl::Error err) { logCLerror(err); }
 }

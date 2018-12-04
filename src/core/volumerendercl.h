@@ -60,6 +60,8 @@ public:
         , IN_HIT_IMG     // input image for image order ESS         image2d_t (UINT)
         , OUT_HIT_IMG    // output image for image order ESS        image2d_t (UINT)
         , IMG_ESS        // image order empty space skipping        cl_uint (bool)
+        , BBOX_BL
+        , BBOX_TR
     };
 
     // mipmap down-scaling metric
@@ -268,6 +270,17 @@ public:
      * @return
      */
     const std::array<double, 256> & getHistogram(unsigned int timestep = 0);
+
+    /**
+     * @brief setBBox Set the Bounding box of the colume (clipping planes)
+     * @param bl_x  Bottom left x coord
+     * @param bl_y  Bottom left y coord
+     * @param bl_z  Bottom left z coord
+     * @param tr_x  Top right x coord
+     * @param tr_y  Top right y coord
+     * @param tr_z  Top right z coord
+     */
+    void setBBox(float bl_x, float bl_y, float bl_z, float tr_x, float tr_y, float tr_z);
 
 private:
     /**

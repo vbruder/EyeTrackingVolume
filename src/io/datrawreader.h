@@ -38,9 +38,9 @@ struct Properties
 
     std::array<unsigned int, 4> volume_res = {{0, 0, 0, 1}};     // x, y, z, t
     std::array<double, 3> slice_thickness = {{1.0, 1.0, 1.0}};
-    std::string format = "";     // UCHAR, USHORT, FLOAT
+    std::vector<std::string> format = {{""}};     // UCHAR, USHORT, FLOAT
     std::string node_file_name = "";
-    std::string image_channel_order = "R";
+    std::vector<std::string> image_channel_order = {{""}};
     unsigned int time_series = {1u};
     // data range for float normalization: TODO: add to kernel
     float min_value = std::numeric_limits<float>::max();
@@ -58,7 +58,7 @@ struct Properties
         {
             str += std::to_string(v) + " ";
         }
-        str += "| Format: " + format + " " + image_channel_order;
+        str += "| Format: " + format.front() + " " + image_channel_order.front();
         return str;
     }
 };

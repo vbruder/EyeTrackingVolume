@@ -26,7 +26,7 @@
      <x>0</x>
      <y>0</y>
      <width>1298</width>
-     <height>26</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -70,6 +70,7 @@
     <addaction name="actionSettings"/>
     <addaction name="actionShowOverlay"/>
     <addaction name="actionShowStatusBar"/>
+    <addaction name="actionClipping"/>
    </widget>
    <widget class="QMenu" name="menuEdit">
     <property name="title">
@@ -99,7 +100,7 @@
   <widget class="QStatusBar" name="statusBar"/>
   <widget class="QDockWidget" name="dockSettings">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+    <sizepolicy hsizetype="Maximum" vsizetype="Minimum">
      <horstretch>1</horstretch>
      <verstretch>1</verstretch>
     </sizepolicy>
@@ -191,46 +192,6 @@
          </widget>
         </item>
        </layout>
-      </widget>
-     </item>
-     <item row="4" column="0">
-      <widget class="QComboBox" name="cbInterpolation">
-       <item>
-        <property name="text">
-         <string>Linear</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Quad</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="2" column="0" colspan="2">
-      <widget class="colorwidgets::ColorWheel" name="colorWheel" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>200</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item row="3" column="0" colspan="2">
-      <widget class="TransferFunctionWidget" name="transferFunctionEditor" native="true"/>
-     </item>
-     <item row="4" column="1">
-      <widget class="QPushButton" name="pbResetTff">
-       <property name="text">
-        <string>Reset</string>
-       </property>
       </widget>
      </item>
      <item row="0" column="0" colspan="2">
@@ -453,6 +414,220 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="dockTF">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="windowTitle">
+    <string>Transfer Function Editor</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QGridLayout" name="gridLayout_5">
+     <item row="4" column="0">
+      <widget class="QComboBox" name="cbInterpolation">
+       <item>
+        <property name="text">
+         <string>Linear</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Quad</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QPushButton" name="pbResetTff">
+       <property name="text">
+        <string>Reset</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="0" colspan="2">
+      <widget class="colorwidgets::ColorWheel" name="colorWheel" native="true">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>200</height>
+        </size>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="0" colspan="2">
+      <widget class="TransferFunctionWidget" name="tf0" native="true"/>
+     </item>
+     <item row="3" column="0" colspan="2">
+      <widget class="TransferFunctionWidget" name="transferFunctionEditor" native="true"/>
+     </item>
+     <item row="2" column="0" colspan="2">
+      <widget class="TransferFunctionWidget" name="tf1" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dockClipping">
+   <property name="floating">
+    <bool>true</bool>
+   </property>
+   <property name="windowTitle">
+    <string>Clipping Planes</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_4">
+    <layout class="QGridLayout" name="gridLayout_6">
+     <item row="11" column="1">
+      <widget class="QSlider" name="sldClipFront">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="2">
+      <widget class="QSpinBox" name="sbClipLeft"/>
+     </item>
+     <item row="14" column="1">
+      <widget class="QLabel" name="label_10">
+       <property name="text">
+        <string>Bottom</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="2">
+      <widget class="QSpinBox" name="sbClipRight"/>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLabel" name="label_7">
+       <property name="text">
+        <string>Left</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QSlider" name="sldClipLeft">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="1">
+      <widget class="QSlider" name="sldClipBack">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1">
+      <widget class="QLabel" name="label_8">
+       <property name="text">
+        <string>Front</string>
+       </property>
+      </widget>
+     </item>
+     <item row="11" column="2">
+      <widget class="QSpinBox" name="sbClipFront"/>
+     </item>
+     <item row="17" column="2">
+      <widget class="QSpinBox" name="sbClipTop"/>
+     </item>
+     <item row="16" column="1">
+      <widget class="QLabel" name="label_11">
+       <property name="text">
+        <string>Top</string>
+       </property>
+      </widget>
+     </item>
+     <item row="12" column="1">
+      <widget class="QLabel" name="label_9">
+       <property name="text">
+        <string>Back</string>
+       </property>
+      </widget>
+     </item>
+     <item row="15" column="2">
+      <widget class="QSpinBox" name="sbClipBottom"/>
+     </item>
+     <item row="15" column="1">
+      <widget class="QSlider" name="sldClipBottom">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="13" column="2">
+      <widget class="QSpinBox" name="sbClipBack"/>
+     </item>
+     <item row="18" column="1">
+      <spacer name="verticalSpacer">
+       <property name="orientation">
+        <enum>Qt::Vertical</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>40</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Right</string>
+       </property>
+      </widget>
+     </item>
+     <item row="17" column="1">
+      <widget class="QSlider" name="sldClipTop">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="QSlider" name="sldClipRight">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QCheckBox" name="chbClipping">
+       <property name="text">
+        <string>Enable clipping</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pbResetClipping">
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset theme="view-refresh"/>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionOpen">
    <property name="icon">
     <iconset theme="document-open">
@@ -650,6 +825,17 @@
     <string>Log interaction</string>
    </property>
   </action>
+  <action name="actionClipping">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Clipping</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -678,8 +864,6 @@
   <tabstop>cbIllum</tabstop>
   <tabstop>sldTimeStep</tabstop>
   <tabstop>sbTimeStep</tabstop>
-  <tabstop>cbInterpolation</tabstop>
-  <tabstop>pbResetTff</tabstop>
  </tabstops>
  <resources/>
  <connections>
@@ -706,12 +890,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1193</x>
-     <y>335</y>
+     <x>1216</x>
+     <y>623</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1239</x>
-     <y>341</y>
+     <x>1278</x>
+     <y>627</y>
     </hint>
    </hints>
   </connection>
@@ -722,12 +906,12 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>1247</x>
-     <y>329</y>
+     <x>1278</x>
+     <y>627</y>
     </hint>
     <hint type="destinationlabel">
-     <x>1181</x>
-     <y>342</y>
+     <x>1216</x>
+     <y>623</y>
     </hint>
    </hints>
   </connection>
@@ -760,6 +944,214 @@
     <hint type="destinationlabel">
      <x>648</x>
      <y>1069</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipTop</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipTop</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>52</x>
+     <y>321</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>107</x>
+     <y>328</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipTop</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipTop</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>123</x>
+     <y>314</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>73</x>
+     <y>317</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipBottom</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipBottom</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>70</x>
+     <y>276</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>110</x>
+     <y>281</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipBottom</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipBottom</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>125</x>
+     <y>273</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>61</x>
+     <y>277</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipBack</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipBack</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>86</x>
+     <y>231</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>121</x>
+     <y>226</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipBack</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipBack</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>242</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>53</x>
+     <y>237</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipFront</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipFront</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>34</x>
+     <y>191</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>123</x>
+     <y>192</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipFront</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipFront</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>122</x>
+     <y>178</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>76</x>
+     <y>185</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipLeft</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipLeft</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>68</x>
+     <y>143</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>119</x>
+     <y>143</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipLeft</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipLeft</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>129</x>
+     <y>150</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>64</x>
+     <y>139</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sldClipRight</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sbClipRight</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>32</x>
+     <y>101</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>121</x>
+     <y>100</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>sbClipRight</sender>
+   <signal>valueChanged(int)</signal>
+   <receiver>sldClipRight</receiver>
+   <slot>setValue(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>117</x>
+     <y>90</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>86</x>
+     <y>93</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>actionClipping</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dockClipping</receiver>
+   <slot>setVisible(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>73</x>
+     <y>538</y>
     </hint>
    </hints>
   </connection>

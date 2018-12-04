@@ -159,6 +159,15 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(&_loopTimer, &QTimer::timeout, this, &MainWindow::nextTimestep);
 
+    // clipping sliders
+    connect(ui->sldClipBack, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->sldClipBottom, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->sldClipFront, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->sldClipLeft, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->sldClipRight, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->sldClipTop, &QSlider::valueChanged, this, &MainWindow::updateBBox);
+    connect(ui->pbResetClipping, &QPushButton::pressed, this, &MainWindow::resetBBox);
+
     // restore settings
     readSettings();
 }
@@ -649,8 +658,31 @@ void MainWindow::finishedLoading()
     for (auto &a : histo)
         qhisto.push_back(a / maxVal);   // normalize to range [0,1]
     ui->transferFunctionEditor->setHistogram(qhisto);
+    updateClippingSliders();
 }
 
+/**
+ * @brief MainWindow::updateClippingSliders
+ */
+void MainWindow::updateClippingSliders()
+{
+    ui->sldClipRight->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sbClipRight->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sldClipLeft->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sbClipLeft->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sldClipFront->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sbClipFront->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sldClipBack->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sbClipBack->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sldClipBottom->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sbClipBottom->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sldClipTop->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sbClipTop->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
+
+    ui->sldClipRight->setValue(ui->sldClipRight->maximum());
+    ui->sldClipBack->setValue(ui->sldClipBack->maximum());
+    ui->sldClipTop->setValue(ui->sldClipTop->maximum());
+}
 
 /**
  * @brief MainWindow::addProgress
@@ -764,4 +796,33 @@ void MainWindow::chooseBackgroundColor()
     QColor col = dia.getColor();
     if (col.isValid())
         ui->volumeRenderWidget->setBackgroundColor(col);
+}
+
+/**
+ * @brief MainWindow::updateBBox
+ */
+void MainWindow::updateBBox()
+{
+    if (ui->chbClipping->isChecked())
+    {
+        QVector3D botLeft(ui->sbClipLeft->value(), ui->sbClipBottom->value(),
+                          ui->sbClipFront->value());
+        QVector3D topRight(ui->sbClipRight->value(), ui->sbClipTop->value(),
+                           ui->sbClipBack->value());
+        ui->volumeRenderWidget->setBBox(botLeft, topRight);
+    }
+}
+
+/**
+ * @brief MainWindow::resetBBox
+ */
+void MainWindow::resetBBox()
+{
+    ui->sldClipLeft->setValue(0);
+    ui->sldClipFront->setValue(0);
+    ui->sldClipBottom->setValue(0);
+    ui->sldClipRight->setValue(ui->sldClipRight->maximum());
+    ui->sldClipBack->setValue(ui->sldClipBack->maximum());
+    ui->sldClipTop->setValue(ui->sldClipTop->maximum());
+    updateBBox();
 }
