@@ -49,6 +49,14 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
+    enum FilterType
+    {
+        FILTER_NONE,
+        FILTER_GAZE,
+        FILTER_FLOW_MAG,
+        FILTER_FLOW_DIR
+    };
+
     explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
@@ -84,6 +92,10 @@ protected:
     void keyPressEvent(QKeyEvent *event) Q_DECL_OVERRIDE;
     void showEvent(QShowEvent *event) Q_DECL_OVERRIDE;
 
+    void setFilterColor(int value);
+    void setFilter1(int value);
+    void setFilter2(int value);
+    void setFilter3(int value);
 private:
 
     void setVolumeData(const QString &fileName);

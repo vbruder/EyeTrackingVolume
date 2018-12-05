@@ -1380,3 +1380,14 @@ void VolumeRenderWidget::reloadKernels()
     updateTransferFunction(_tffStops, 2);
     resizeGL(width(), height());
 }
+
+/**
+ * @brief VolumeRenderWidget::setFilter
+ * @param id
+ * @param value
+ */
+void VolumeRenderWidget::setFilter(int id, int value)
+{
+    _volumerender.setFilters(id, static_cast<unsigned int>(value));
+    updateView();
+}

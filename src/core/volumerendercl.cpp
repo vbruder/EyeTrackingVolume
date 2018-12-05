@@ -61,6 +61,7 @@ VolumeRenderCL::VolumeRenderCL() :
   , _modelScale{1.0, 1.0, 1.0}
   , _useGL(true)
   , _useImgESS(false)
+  , _filters({{0,0,0,0}})
 {
 }
 
@@ -182,6 +183,7 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
         _raycastKernel.setArg(IMG_ESS, 0);
         _raycastKernel.setArg(BBOX_BL, cl_float3{{-1.f, -1.f, -1.f}});
         _raycastKernel.setArg(BBOX_TR, cl_float3{{1.f, 1.f, 1.f}});
+        _raycastKernel.setArg(FILTERS, _filters);
 
         _genBricksKernel = cl::Kernel(program, "generateBricks");
         _downsamplingKernel = cl::Kernel(program, "downsampling");
@@ -904,6 +906,26 @@ void VolumeRenderCL::setAerial(bool aerial)
 {
     try {
         _raycastKernel.setArg(AERIAL, static_cast<cl_uint>(aerial));
+    } catch (cl::Error err) { logCLerror(err); }
+}
+
+/**
+ * @brief VolumeRenderCL::setFilters
+ * @param id Filter id, 0: color mapping, 1..3 filter order
+ * @param value 0: none, 1: gaze, 2: flow magnitude, 3: flow direction
+ */
+void VolumeRenderCL::setFilters(int id, uint value)
+{
+    switch(id)
+    {
+    case 0: _filters.x = value; break;
+    case 1: _filters.y = value; break;
+    case 2: _filters.z = value; break;
+    case 3: _filters.w = value; break;
+    default: throw std::invalid_argument("Invalid filter id.");
+    }
+    try {
+        _raycastKernel.setArg(FILTERS, _filters);
     } catch (cl::Error err) { logCLerror(err); }
 }
 

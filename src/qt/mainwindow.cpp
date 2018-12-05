@@ -37,6 +37,7 @@
 #include <QComboBox>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QGroupBox>
 
 /**
  * @brief MainWindow::MainWindow
@@ -164,18 +165,19 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
             ui->tf0, &TransferFunctionWidget::setColorSelected);
 
-
-//    connect(ui->tf1->getEditor(), &TransferFunctionEditor::selectedPointChanged,
-//            ui->colorWheel, &colorwidgets::ColorWheel::setColor);
-//    connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
-//            ui->tf1, &TransferFunctionWidget::setColorSelected);
-
-//    connect(ui->tf2->getEditor(), &TransferFunctionEditor::selectedPointChanged,
-//            ui->colorWheel, &colorwidgets::ColorWheel::setColor);
-//    connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
-//            ui->tf2, &TransferFunctionWidget::setColorSelected);
-
-
+    // filters
+    connect(ui->cbTfColor,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::setFilterColor);
+    connect(ui->cbFilter1,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::setFilter1);
+    connect(ui->cbFilter2,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::setFilter2);
+    connect(ui->cbFilter3,
+            static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+            this, &MainWindow::setFilter3);
 
     ui->statusBar->addPermanentWidget(&_statusLabel);
     connect(ui->volumeRenderWidget, &VolumeRenderWidget::frameSizeChanged,
@@ -894,4 +896,28 @@ void MainWindow::resetBBox()
     ui->sldClipBack->setValue(ui->sldClipBack->maximum());
     ui->sldClipTop->setValue(ui->sldClipTop->maximum());
     updateBBox();
+}
+
+/**
+ * @brief MainWindow::setFilterColor
+ * @param value
+ */
+void MainWindow::setFilterColor(int value)
+{
+    ui->volumeRenderWidget->setFilter(0, value);
+}
+
+void MainWindow::setFilter1(int value)
+{
+    ui->volumeRenderWidget->setFilter(1, value);
+}
+
+void MainWindow::setFilter2(int value)
+{
+    ui->volumeRenderWidget->setFilter(2, value);
+}
+
+void MainWindow::setFilter3(int value)
+{
+    ui->volumeRenderWidget->setFilter(3, value);
 }

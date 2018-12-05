@@ -85,6 +85,7 @@ public:
 
     void setBBox(QVector3D botLeft, QVector3D topRight);
 
+    void setFilter(int id, int value);
 public slots:
     void cleanup();
     void resetCam();

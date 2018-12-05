@@ -66,7 +66,7 @@ public:
         , VOL_FLOW
         , TF1
         , TF2
-//        , FILTERS
+        , FILTERS
     };
 
     // mipmap down-scaling metric
@@ -287,6 +287,12 @@ public:
      */
     void setBBox(float bl_x, float bl_y, float bl_z, float tr_x, float tr_y, float tr_z);
 
+    /**
+     * @brief setFilters
+     * @param id Filter id, 0: color mapping, 1..3 filter order
+     * @param value 0: none, 1: gaze, 2: flow magnitude, 3: flow direction
+     */
+    void setFilters(int id, uint value);
 private:
     /**
      * @brief Generate coarse grained volume bricks that can be used for ESS.
@@ -392,6 +398,7 @@ private:
     bool _useGL;
     bool _useImgESS;
     std::string _currentDevice;
+    cl_uint4 _filters;
 
     DatRawReader _dr;
 };
