@@ -68,6 +68,9 @@ protected slots:
     void loadCamState();
     void showAboutDialog();
     void updateTransferFunctionFromGradientStops();
+    void updateTransferFunctionFromGradientStops0(QGradientStops stops);
+    void updateTransferFunctionFromGradientStops1(QGradientStops stops);
+    void updateTransferFunctionFromGradientStops2(QGradientStops stops);
     void setLoopTimesteps();
     void nextTimestep();
     void setPlaybackSpeed(int speed);

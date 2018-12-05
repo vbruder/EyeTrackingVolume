@@ -90,7 +90,7 @@ public slots:
     void resetCam();
 
     void updateSamplingRate(double samplingRate);
-    void updateTransferFunction(QGradientStops stops);
+    void updateTransferFunction(QGradientStops stops, int id = 0);
     std::vector<unsigned char> getRawTransferFunction(QGradientStops stops) const;
     void setRawTransferFunction(std::vector<unsigned char> tff);
 

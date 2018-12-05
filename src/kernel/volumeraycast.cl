@@ -395,6 +395,11 @@ __kernel void volumeRender(  __read_only image3d_t volData
                            , const uint imgEss
                            , const float3 bbox_bl
                            , const float3 bbox_tr
+                           , __read_only image3d_t gazeData
+                           , __read_only image3d_t flowData
+                           , __read_only image1d_t tf1
+                           , __read_only image1d_t tf2
+//                           , const uint4 filters
                            )
 {
     int2 globalId = (int2)(get_global_id(0), get_global_id(1));
@@ -625,6 +630,12 @@ __kernel void volumeRender(  __read_only image3d_t volData
                 {
                     tfColor = useLinear ? read_imagef(volData,  linearSmp, (float4)(pos, 1.f))
                                         : read_imagef(volData, nearestSmp, (float4)(pos, 1.f));
+                    // eye tracking
+                    float gaze = read_imagef(gazeData, linearSmp, (float4)(pos, 1.f)).x;
+                    float2 flow = read_imagef(flowData, linearSmp, (float4)(pos, 1.f)).xy;
+//                    tfColor.w = read_imagef(tffData, linearSmp, flow.y).w;
+//                    tfColor.w = read_imagef(tf1, linearSmp, flow.y).w;
+                    tfColor.w = read_imagef(tf2, linearSmp, gaze).w;
                 }
                 // RG: 2D vector, map magnitude to alpha
                 else if (get_image_channel_order(volData) == CLK_RG)

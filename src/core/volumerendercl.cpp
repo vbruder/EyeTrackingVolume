@@ -199,8 +199,13 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
 void VolumeRenderCL::setMemObjectsRaycast(const size_t t)
 {
     _raycastKernel.setArg(VOLUME, _volumesMem.at(t));
+    _raycastKernel.setArg(VOL_GAZE, _volumesMem.at(1));
+    _raycastKernel.setArg(VOL_FLOW, _volumesMem.at(2));
+
     _raycastKernel.setArg(BRICKS, _bricksMem.at(t));
-    _raycastKernel.setArg(TFF, _tffMem);
+    _raycastKernel.setArg(TF0, _tf0Mem);
+    _raycastKernel.setArg(TF1, _tf1Mem);
+    _raycastKernel.setArg(TF2, _tf2Mem);
     if (_useGL)
         _raycastKernel.setArg(OUTPUT, _outputMem);
     else
@@ -582,7 +587,7 @@ void VolumeRenderCL::generateBricks()
                                              bricksTexSize.at(1),
                                              bricksTexSize.at(2)));
             // run aggregation kernel
-            setMemObjectsBrickGen(i);
+            setMemObjectsBrickGen(0);
             size_t lDim = 4;    // local work group dimension: 4*4*4=64
             cl::NDRange globalThreads(bricksTexSize.at(0) + (lDim - bricksTexSize.at(0) % lDim),
                                       bricksTexSize.at(1) + (lDim - bricksTexSize.at(1) % lDim),
@@ -758,7 +763,7 @@ const std::array<double, 256> & VolumeRenderCL::getHistogram(unsigned int timest
  * @brief VolumeRenderCL::setTransferFunction
  * @param tff
  */
-void VolumeRenderCL::setTransferFunction(std::vector<unsigned char> &tff)
+void VolumeRenderCL::setTransferFunction(std::vector<unsigned char> &tff, const int id)
 {
     if (!_dr.has_data())
         return;
@@ -768,17 +773,25 @@ void VolumeRenderCL::setTransferFunction(std::vector<unsigned char> &tff)
         format.image_channel_order = CL_RGBA;
         format.image_channel_data_type = CL_UNORM_INT8;
 
-        cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;
+        cl_mem_flags flags = CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR;       
         // divide size by 4 because of RGBA channels
-        _tffMem = cl::Image1D(_contextCL, flags, format, tff.size() / 4, tff.data());
-        generateBricks();
-
-        std::vector<unsigned int> prefixSum;
-        // copy only alpha values (every fourth element)
-        for (size_t i = 3; i < tff.size(); i += 4)
-            prefixSum.push_back(static_cast<unsigned int>(tff.at(i)));
-        std::partial_sum(prefixSum.begin(), prefixSum.end(), prefixSum.begin());
-        setTffPrefixSum(prefixSum);
+//        cl::Image1D tffMem = cl::Image1D(_contextCL, flags, format, tff.size() / 4, tff.data());
+        switch(id)
+        {
+        case 0: _tf0Mem = cl::Image1D(_contextCL, flags, format, tff.size() / 4, tff.data()); break;
+        case 1: _tf1Mem = cl::Image1D(_contextCL, flags, format, tff.size() / 4, tff.data()); break;
+        case 2: _tf2Mem = cl::Image1D(_contextCL, flags, format, tff.size() / 4, tff.data()); break;
+        }
+        if (id == 0)
+        {
+            generateBricks();
+            std::vector<unsigned int> prefixSum;
+            // copy only alpha values (every fourth element)
+            for (size_t i = 3; i < tff.size(); i += 4)
+                prefixSum.push_back(static_cast<unsigned int>(tff.at(i)));
+            std::partial_sum(prefixSum.begin(), prefixSum.end(), prefixSum.begin());
+            setTffPrefixSum(prefixSum);
+        }
     }
     catch (cl::Error err)
     {

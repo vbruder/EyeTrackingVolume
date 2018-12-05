@@ -275,6 +275,7 @@ void TransferFunctionEditor::pointsUpdated()
 void TransferFunctionEditor::selectedPointUpdated(const QColor color)
 {
     emit selectedPointChanged(color);
+    emit pointsUpdated();
 }
 
 

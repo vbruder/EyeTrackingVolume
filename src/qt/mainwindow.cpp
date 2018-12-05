@@ -135,23 +135,47 @@ MainWindow::MainWindow(QWidget *parent) :
             ui->volumeRenderWidget, &VolumeRenderWidget::setCamOrtho);
     connect(ui->chbContRendering, &QCheckBox::toggled,
             ui->volumeRenderWidget, &VolumeRenderWidget::setContRendering);
-    // connect tff editor
-    connect(ui->transferFunctionEditor->getEditor(), &TransferFunctionEditor::gradientStopsChanged,
-            ui->volumeRenderWidget, &VolumeRenderWidget::updateTransferFunction);
+    // connect tff editor default tf0
+    connect(ui->tf0->getEditor(), &TransferFunctionEditor::gradientStopsChanged,
+            this, &MainWindow::updateTransferFunctionFromGradientStops0);
+    // tf1
+    connect(ui->tf1->getEditor(), &TransferFunctionEditor::gradientStopsChanged,
+            this, &MainWindow::updateTransferFunctionFromGradientStops1);
+    // tf2
+    connect(ui->tf2->getEditor(), &TransferFunctionEditor::gradientStopsChanged,
+            this, &MainWindow::updateTransferFunctionFromGradientStops2);
+    // other TF related controls
     connect(ui->pbResetTff, &QPushButton::clicked,
-            ui->transferFunctionEditor, &TransferFunctionWidget::resetTransferFunction);
-    connect(ui->cbInterpolation, 
+            ui->tf0, &TransferFunctionWidget::resetTransferFunction);
+    connect(ui->cbInterpolation,
+            static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
+            ui->tf0, &TransferFunctionWidget::setInterpolation);
+    connect(ui->cbInterpolation,
             static_cast<void (QComboBox::*)(const QString &)>(&QComboBox::currentIndexChanged),
             ui->volumeRenderWidget, &VolumeRenderWidget::setTffInterpolation);
-    connect(ui->cbInterpolation, SIGNAL(currentIndexChanged(QString)),
-            ui->transferFunctionEditor, SLOT(setInterpolation(QString)));
+//    connect(ui->cbInterpolation, SIGNAL(currentIndexChanged(QString)),
+//            ui->tf0, SLOT(setInterpolation(QString)));
 //    connect(ui->cbInterpolation, qOverload<const QString &>(&QComboBox::currentIndexChanged),
-//            ui->transferFunctionEditor, &TransferFunctionEditor::setInterpolation);
+//            ui->tf0, &TransferFunctionEditor::setInterpolation);
 
-    connect(ui->transferFunctionEditor->getEditor(), &TransferFunctionEditor::selectedPointChanged,
+    // color wheel - TF interaction
+    connect(ui->tf0->getEditor(), &TransferFunctionEditor::selectedPointChanged,
             ui->colorWheel, &colorwidgets::ColorWheel::setColor);
     connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
-            ui->transferFunctionEditor, &TransferFunctionWidget::setColorSelected);
+            ui->tf0, &TransferFunctionWidget::setColorSelected);
+
+
+//    connect(ui->tf1->getEditor(), &TransferFunctionEditor::selectedPointChanged,
+//            ui->colorWheel, &colorwidgets::ColorWheel::setColor);
+//    connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
+//            ui->tf1, &TransferFunctionWidget::setColorSelected);
+
+//    connect(ui->tf2->getEditor(), &TransferFunctionEditor::selectedPointChanged,
+//            ui->colorWheel, &colorwidgets::ColorWheel::setColor);
+//    connect(ui->colorWheel, &colorwidgets::ColorWheel::colorChanged,
+//            ui->tf2, &TransferFunctionWidget::setColorSelected);
+
+
 
     ui->statusBar->addPermanentWidget(&_statusLabel);
     connect(ui->volumeRenderWidget, &VolumeRenderWidget::frameSizeChanged,
@@ -223,7 +247,9 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
  */
 void MainWindow::showEvent(QShowEvent *event)
 {
-    ui->transferFunctionEditor->resetTransferFunction();
+    ui->tf0->resetTransferFunction();
+    ui->tf1->resetTransferFunction();
+    ui->tf2->resetTransferFunction();
     event->accept();
 }
 
@@ -268,18 +294,47 @@ void MainWindow::setVolumeData(const QString &fileName)
 {
     ui->volumeRenderWidget->setVolumeData(fileName);
     ui->volumeRenderWidget->updateTransferFunction(
-                ui->transferFunctionEditor->getEditor()->getGradientStops());
+                ui->tf0->getEditor()->getGradientStops(), 0);
+    ui->volumeRenderWidget->updateTransferFunction(
+                ui->tf1->getEditor()->getGradientStops(), 1);
+    ui->volumeRenderWidget->updateTransferFunction(
+                ui->tf2->getEditor()->getGradientStops(), 2);
     ui->volumeRenderWidget->updateView();
 }
 
 
 /**
- * @brief MainWindow::updateTransferFunction
+ * @brief MainWindow::updateTransferFunction - Default Tf
  */
 void MainWindow::updateTransferFunctionFromGradientStops()
 {
     ui->volumeRenderWidget->updateTransferFunction(
-                ui->transferFunctionEditor->getEditor()->getGradientStops());
+                ui->tf0->getEditor()->getGradientStops(), 0);
+}
+
+/**
+ * @brief MainWindow::updateTransferFunctionFromGradientStops0
+ * @param stops
+ */
+void MainWindow::updateTransferFunctionFromGradientStops0(QGradientStops stops)
+{
+    ui->volumeRenderWidget->updateTransferFunction(stops, 0);
+}
+
+/**
+ * @brief MainWindow::updateTransferFunctionFromGradientStops0
+ */
+void MainWindow::updateTransferFunctionFromGradientStops1(QGradientStops stops)
+{
+    ui->volumeRenderWidget->updateTransferFunction(stops, 1);
+}
+
+/**
+ * @brief MainWindow::updateTransferFunctionFromGradientStops1
+ */
+void MainWindow::updateTransferFunctionFromGradientStops2(QGradientStops stops)
+{
+    ui->volumeRenderWidget->updateTransferFunction(stops, 2);
 }
 
 /**
@@ -491,8 +546,8 @@ void MainWindow::readTff(const QString &fileName)
             }
             if (!stops.isEmpty())
             {
-                ui->transferFunctionEditor->getEditor()->setGradientStops(stops);
-                ui->transferFunctionEditor->getEditor()->pointsUpdated();
+                ui->tf0->getEditor()->setGradientStops(stops);
+                ui->tf0->getEditor()->pointsUpdated();
             }
             else
                 qCritical() << "Empty transfer function file.";
@@ -526,7 +581,7 @@ void MainWindow::saveTff()
         {
             QTextStream out(&file);
             const QGradientStops stops =
-                    ui->transferFunctionEditor->getEditor()->getGradientStops();
+                    ui->tf0->getEditor()->getGradientStops();
             foreach (QGradientStop s, stops)
             {
                 out << s.first << " " << s.second.red() << " " << s.second.green()
@@ -560,11 +615,11 @@ void MainWindow::saveRawTff()
         {
             QTextStream out(&file);
             const QGradientStops stops =
-                    ui->transferFunctionEditor->getEditor()->getGradientStops();
+                    ui->tf0->getEditor()->getGradientStops();
             const std::vector<unsigned char> tff = ui->volumeRenderWidget->getRawTransferFunction(stops);
             foreach (unsigned char c, tff)
             {
-                out << (int)c << " ";
+                out << static_cast<int>(c) << " ";
             }
             file.close();
         }
@@ -594,7 +649,7 @@ void MainWindow::loadRawTff()
         {
             while (tff_file >> value)
             {
-                values.push_back((char)value);
+                values.push_back(static_cast<unsigned char>(value));
             }
             tff_file.close();
             ui->volumeRenderWidget->setRawTransferFunction(values);
@@ -617,16 +672,17 @@ void MainWindow::setStatusText()
     QString status = "No data loaded yet.";
     if (ui->volumeRenderWidget->hasData())
     {
+        QVector4D res = ui->volumeRenderWidget->getVolumeResolution();
         status = "File: ";
         status += _fileName;
         status += " | Volume: ";
-        status += QString::number(ui->volumeRenderWidget->getVolumeResolution().x());
+        status += QString::number(static_cast<int>(res.x()));
         status += "x";
-        status += QString::number(ui->volumeRenderWidget->getVolumeResolution().y());
+        status += QString::number(static_cast<int>(res.y()));
         status += "x";
-        status += QString::number(ui->volumeRenderWidget->getVolumeResolution().z());
+        status += QString::number(static_cast<int>(res.z()));
         status += "x";
-        status += QString::number(ui->volumeRenderWidget->getVolumeResolution().w());
+        status += QString::number(static_cast<int>(res.w()));
         status += " | Frame: ";
         status += QString::number(ui->volumeRenderWidget->size().width());
         status += "x";
@@ -651,13 +707,26 @@ void MainWindow::finishedLoading()
     ui->volumeRenderWidget->updateView();
 
     std::array<double, 256> histo =
-            ui->volumeRenderWidget->getHistogram(static_cast<unsigned int>(ui->sbTimeStep->value()));
-
+            ui->volumeRenderWidget->getHistogram(1u);
     double maxVal = *std::max_element(histo.begin() + 1, histo.end());
     QVector<qreal> qhisto;
     for (auto &a : histo)
         qhisto.push_back(a / maxVal);   // normalize to range [0,1]
-    ui->transferFunctionEditor->setHistogram(qhisto);
+    ui->tf0->setHistogram(qhisto);
+
+    histo = ui->volumeRenderWidget->getHistogram(2u);
+    maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    qhisto.clear();
+    for (auto &a : histo)
+        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
+    ui->tf1->setHistogram(qhisto);
+
+    histo = ui->volumeRenderWidget->getHistogram(2u);
+    maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    qhisto.clear();
+    for (auto &a : histo)
+        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
+    ui->tf2->setHistogram(qhisto);
     updateClippingSliders();
 }
 

@@ -43,7 +43,7 @@ public:
     {
           VOLUME     = 0 // volume data set                         image3d_t
         , BRICKS     = 1 // low resolution brick volume             image3d_t
-        , TFF        = 2 // transfer function array                 image1d_t
+        , TF0        = 2 // transfer function array                 image1d_t
         , OUTPUT         // output image                            image2d_t
         , SAMPLING_RATE  // step size factor                        cl_float
         , VIEW           // view matrix                             float16
@@ -62,6 +62,11 @@ public:
         , IMG_ESS        // image order empty space skipping        cl_uint (bool)
         , BBOX_BL
         , BBOX_TR
+        , VOL_GAZE
+        , VOL_FLOW
+        , TF1
+        , TF2
+//        , FILTERS
     };
 
     // mipmap down-scaling metric
@@ -154,7 +159,7 @@ public:
      * @param rangeMin clamp range to minimum
      * @param rangeMax clamp range to maximum
      */
-    void setTransferFunction(std::vector<unsigned char> &tff);
+    void setTransferFunction(std::vector<unsigned char> &tff, const int id = 0);
 
     /**
      * @brief Set the prefix sum of the transfer function.
@@ -373,7 +378,9 @@ private:
     std::vector<cl::Image3D> _bricksMem;
     cl::ImageGL _outputMem;
     cl::ImageGL _overlayMem;
-    cl::Image1D _tffMem;
+    cl::Image1D _tf0Mem;
+    cl::Image1D _tf1Mem;
+    cl::Image1D _tf2Mem;
     cl::Image1D _tffPrefixMem;
     cl::Image2D _outputMemNoGL;
     cl::Image2D _outputHitMem;

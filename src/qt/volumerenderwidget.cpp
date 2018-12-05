@@ -663,7 +663,9 @@ void VolumeRenderWidget::showSelectOpenCL()
                 catch (...) {
                     qCritical() << "An unknown error occured initializing OpenCL/OpenGL.";
                 }
-                updateTransferFunction(_tffStops);
+                updateTransferFunction(_tffStops, 0);
+                updateTransferFunction(_tffStops, 1);
+                updateTransferFunction(_tffStops, 2);
                 this->resizeGL(this->width(), this->height());
             }
         }
@@ -783,7 +785,9 @@ void VolumeRenderWidget::setRawTransferFunction(std::vector<unsigned char> tff)
 {
     try
     {
-        _volumerender.setTransferFunction(tff);
+        _volumerender.setTransferFunction(tff, 0);
+        _volumerender.setTransferFunction(tff, 1);
+        _volumerender.setTransferFunction(tff, 2);
         update();
     }
     catch (std::runtime_error e)
@@ -796,7 +800,7 @@ void VolumeRenderWidget::setRawTransferFunction(std::vector<unsigned char> tff)
  * @brief VolumeRenderWidget::updateTransferFunction
  * @param stops
  */
-void VolumeRenderWidget::updateTransferFunction(QGradientStops stops)
+void VolumeRenderWidget::updateTransferFunction(QGradientStops stops, int id)
 {
     const int tffSize = 256;
     const qreal granularity = 4096.0;
@@ -815,21 +819,24 @@ void VolumeRenderWidget::updateTransferFunction(QGradientStops stops)
 //    tff.at(2) = (uchar)0;
 //    tff.at(3) = (uchar)0;
 #pragma omp for
-    for (int i = 0; i < tffSize; ++i)
+    for (size_t i = 0; i < tffSize; ++i)
     {
         interpolator.setCurrentTime((i/static_cast<double>(tffSize)) * granularity);
-        tff.at(i*4 + 0) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().red()   - 3);
-        tff.at(i*4 + 1) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().green() - 3);
-        tff.at(i*4 + 2) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().blue()  - 3);
-        tff.at(i*4 + 3) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().alpha() - 3);
+        tff.at(i*4 + 0) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().red()   - 3));
+        tff.at(i*4 + 1) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().green() - 3));
+        tff.at(i*4 + 2) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().blue()  - 3));
+        tff.at(i*4 + 3) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().alpha() - 3));
         prefixSum.at(i) = tff.at(i*4 + 3);
     }
     try
     {
-        _volumerender.setTransferFunction(tff);
+        _volumerender.setTransferFunction(tff, id);
         // TODO: replace with std::exclusicve_scan(std::par, ... )
-        std::partial_sum(prefixSum.begin(), prefixSum.end(), prefixSum.begin());
-        _volumerender.setTffPrefixSum(prefixSum);
+        if (id == 0)
+        {
+            std::partial_sum(prefixSum.begin(), prefixSum.end(), prefixSum.begin());
+            _volumerender.setTffPrefixSum(prefixSum);
+        }
     }
     catch (std::runtime_error e)
     {
@@ -869,10 +876,10 @@ std::vector<unsigned char> VolumeRenderWidget::getRawTransferFunction(QGradientS
     for (size_t i = 0; i < tffSize; ++i)
     {
         interpolator.setCurrentTime((i/static_cast<double>(tffSize)) * granularity);
-        tff.at(i*4 + 0) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().red()   - 3);
-        tff.at(i*4 + 1) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().green() - 3);
-        tff.at(i*4 + 2) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().blue()  - 3);
-        tff.at(i*4 + 3) = (uchar)qMax(0, interpolator.currentValue().value<QColor>().alpha() - 3);
+        tff.at(i*4 + 0) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().red()   - 3));
+        tff.at(i*4 + 1) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().green() - 3));
+        tff.at(i*4 + 2) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().blue()  - 3));
+        tff.at(i*4 + 3) = static_cast<uchar>(qMax(0, interpolator.currentValue().value<QColor>().alpha() - 3));
     }
     return tff;
 }
@@ -1368,5 +1375,8 @@ void VolumeRenderWidget::reloadKernels()
 {
     // NOTE: this reload resets all previously defined rendering settings to default values
     initVolumeRenderer();
+    updateTransferFunction(_tffStops, 0);
+    updateTransferFunction(_tffStops, 1);
+    updateTransferFunction(_tffStops, 2);
     resizeGL(width(), height());
 }
