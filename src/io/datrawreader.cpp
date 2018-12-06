@@ -57,8 +57,15 @@ void DatRawReader::read_files(const std::string &file_name)
         }
         this->_raw_data.clear();
         this->_histograms.clear();
+
+        size_t id = 0;
         for (const auto &n : _prop.raw_file_names)
-            read_raw(n);
+        {
+            read_raw(n, id);
+            // if we have multiple objects but temporal resolution equals 1 -> multi field volumes
+            if (_prop.raw_file_names.size() > 1 && _prop.volume_res.at(3) == 1)
+                id++;
+        }
     }
     catch (std::runtime_error e)
     {
@@ -267,7 +274,7 @@ inline static void endswap(T *objp)
 /*
  * DatRawReader::read_raw
  */
-void DatRawReader::read_raw(const std::string raw_file_name)
+void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
 {
     if (raw_file_name.empty())
         throw std::invalid_argument("Raw file name must not be empty.");
@@ -305,8 +312,15 @@ void DatRawReader::read_raw(const std::string raw_file_name)
         raw_timestep.resize(_prop.raw_file_size);
         std::array<double, 256> histo;
         histo.fill(0.);
+        // second histogram if RG two channel data
+        std::array<double, 256> histo2;
+        histo2.fill(0.);
+        bool twoHisto = false;
+        if (_prop.image_channel_order.at(id) == "RG")
+            twoHisto = true;
+
         // if float precision: change endianness to little endian
-        if (_prop.format.front() == "FLOAT")
+        if (_prop.format.at(id) == "FLOAT")
         {
             std::vector<float> floatdata(_prop.raw_file_size / sizeof(float));
             is.read(reinterpret_cast<char*>(floatdata.data()),
@@ -342,16 +356,21 @@ void DatRawReader::read_raw(const std::string raw_file_name)
             {
                 float value = static_cast<float>( static_cast<unsigned char>(raw_timestep.at(i)));
                 assert(value >= 0.f && value <= 255.f);
-//                value = std::min(std::max(0.f, value), 255.f);
                 #pragma omp atomic write
                 _prop.min_value = std::min(_prop.min_value, value);
                 #pragma omp atomic write
                 _prop.max_value = std::max(_prop.max_value, value);
-                #pragma omp atomic
-                histo.at(static_cast<size_t>(value)) += 1.;
+                if (twoHisto && (i%2 == 0))
+                    #pragma omp atomic
+                    histo2.at(static_cast<size_t>(value)) += 1.;
+                else
+                    #pragma omp atomic
+                    histo.at(static_cast<size_t>(value)) += 1.;
             }
         }
         _histograms.push_back(std::move(histo));
+        if (twoHisto)
+            _histograms.push_back(std::move(histo2));
         _raw_data.push_back(std::move(raw_timestep));
         if (!is)
             throw std::runtime_error("Error reading " + raw_file_name);
@@ -381,15 +400,15 @@ void DatRawReader::read_raw(const std::string raw_file_name)
         switch (bytes)
         {
         case 1:
-            _prop.format.front() = "UCHAR";
+            _prop.format.at(id) = "UCHAR";
             std::cout << "Format determined as UCHAR." << std::endl;
             break;
         case 2:
-            _prop.format.front() = "USHORT";
+            _prop.format.at(id) = "USHORT";
             std::cout << "Format determined as USHORT." << std::endl;
             break;
         case 4:
-            _prop.format.front() = "FLOAT";
+            _prop.format.at(id) = "FLOAT";
             std::cout << "Format determined as FLOAT." << std::endl;
             break;
         default: throw std::runtime_error("Could not resolve missing format specification.");

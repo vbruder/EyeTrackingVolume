@@ -708,6 +708,7 @@ void MainWindow::finishedLoading()
     ui->volumeRenderWidget->setLoadingFinished(true);
     ui->volumeRenderWidget->updateView();
 
+    // gaze histo
     std::array<double, 256> histo =
             ui->volumeRenderWidget->getHistogram(1u);
     double maxVal = *std::max_element(histo.begin() + 1, histo.end());
@@ -716,13 +717,15 @@ void MainWindow::finishedLoading()
         qhisto.push_back(a / maxVal);   // normalize to range [0,1]
     ui->tf0->setHistogram(qhisto);
 
-    histo = ui->volumeRenderWidget->getHistogram(2u);
+    // flow direction
+    histo = ui->volumeRenderWidget->getHistogram(3u);
     maxVal = *std::max_element(histo.begin() + 1, histo.end());
     qhisto.clear();
     for (auto &a : histo)
         qhisto.push_back(a / maxVal);   // normalize to range [0,1]
     ui->tf1->setHistogram(qhisto);
 
+    // flow magnitude
     histo = ui->volumeRenderWidget->getHistogram(2u);
     maxVal = *std::max_element(histo.begin() + 1, histo.end());
     qhisto.clear();
