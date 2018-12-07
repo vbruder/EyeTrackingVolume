@@ -610,6 +610,7 @@ __kernel void volumeRender(  __read_only image3d_t volData
             if (prefixMin == prefixMax)
             {
                 t = t_exit;
+                if (t >= tfar) break;
                 continue;
             }
         }
@@ -620,6 +621,12 @@ __kernel void volumeRender(  __read_only image3d_t volData
         {
             pos = camPos + (t-offset)*rayDir;
             pos = pos * 0.5f + 0.5f;    // normalize to [0,1]
+
+            if (convert_int(pos.z * 1000) % 30 != 0)
+            {
+                t += stepSize;
+                continue;
+            }
 
             float4 gradient = (float4)(0.f);
             if (illumType == 4)   // gradient magnitude based shading
