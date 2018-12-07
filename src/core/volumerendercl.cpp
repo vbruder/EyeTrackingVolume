@@ -657,7 +657,8 @@ void VolumeRenderCL::volDataToCLmem(const std::vector<std::vector<char>> &volume
                 formatMultiplier = sizeof(cl_float);
             }
             else
-                throw std::invalid_argument("Unknown or invalid volume data format.");
+                throw std::invalid_argument("Unknown or invalid volume data format."
+                                            + _dr.properties().format.at(i));
 
             if(_dr.properties().volume_res[0] * _dr.properties().volume_res[1] *
                      _dr.properties().volume_res[2] * formatMultiplier > v.size())
@@ -757,7 +758,7 @@ const std::array<unsigned int, 4> VolumeRenderCL::getResolution() const
 const std::array<double, 256> & VolumeRenderCL::getHistogram(unsigned int timestep)
 {
     if (!_dr.has_data())
-        throw std::invalid_argument("Invalid timestep for histogram data.");
+        throw std::invalid_argument("Data not available.");
     return _dr.getHistogram(timestep);
 }
 

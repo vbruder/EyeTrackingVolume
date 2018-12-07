@@ -330,12 +330,17 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
             {
                 // swap endianness to little endian
                 endswap(&floatdata.at(i));
-                float value = floatdata.at(i) / 218.347f; // FIXME: gaze data range
+                float value = floatdata.at(i); // / 218.347f; // FIXME: gaze data range
                 // FIXME: assuming normalized values [0,1] here...
                 size_t bin = static_cast<size_t>(round(value * 256.f));
                 bin = std::min(bin, 255ul);
-                #pragma omp atomic
-                histo.at(bin) += 1.;
+                if (twoHisto && (i%2 == 0))
+                    #pragma omp atomic
+                    histo2.at(bin) += 1.;
+                else
+                    #pragma omp atomic
+                    histo.at(bin) += 1.;
+//                histo.at(bin) += 1.;
                 #pragma omp atomic write
                 _prop.min_value = std::min(_prop.min_value, value);
                 #pragma omp atomic write

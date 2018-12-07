@@ -370,6 +370,40 @@ float calcAO(float3 n, uint4 *taus, image3d_t volData, float3 pos, float stepSiz
     return ao;
 }
 
+bool approxEq(float x, float y, float delta)
+{
+    return fabs(x - y) <= delta;
+}
+
+bool approxEq2(float2 a, float2 b, float delta)
+{
+    return approxEq(a.x, b.x, delta) && approxEq(a.y, b.y, delta);
+}
+
+bool checkEdges(float3 pos, float3 boxMin, float3 boxMax, float3 voxLen)
+{
+    voxLen *= 3.f;
+    boxMin = boxMin*0.5f + 0.5f;
+    boxMax = boxMax*0.5f + 0.5f;
+
+    if (
+        (pos.x < boxMin.x + voxLen.x && pos.y < boxMin.y + voxLen.y) ||
+        (pos.x < boxMin.x + voxLen.x && pos.y > boxMax.y - voxLen.y) ||
+        (pos.x < boxMin.x + voxLen.x && pos.z < boxMin.z + voxLen.z) ||
+        (pos.x < boxMin.x + voxLen.x && pos.z > boxMax.z - voxLen.z) ||
+        (pos.y < boxMin.y + voxLen.y && pos.z < boxMin.z + voxLen.z) ||
+        (pos.y < boxMin.y + voxLen.y && pos.z > boxMax.z - voxLen.z) ||
+        (pos.x > boxMax.x - voxLen.x && pos.z < boxMin.z + voxLen.z) ||
+        (pos.x > boxMax.x - voxLen.x && pos.z > boxMax.z - voxLen.z) ||
+        (pos.x > boxMax.x - voxLen.x && pos.y < boxMin.y + voxLen.y) ||
+        (pos.x > boxMax.x - voxLen.x && pos.y > boxMax.y - voxLen.y) ||
+        (pos.y > boxMax.y - voxLen.y && pos.z < boxMin.z + voxLen.z) ||
+        (pos.y > boxMax.y - voxLen.y && pos.z > boxMax.z - voxLen.z)
+       )
+        return true;
+    else
+        return false;
+}
 
 /**
  * direct volume raycasting kernel
@@ -629,8 +663,10 @@ __kernel void volumeRender(  __read_only image3d_t volData
                 else if (get_image_channel_order(volData) == CLK_RGBA)
                 {
                     // eye tracking: color mapping
-                    float gaze = read_imagef(gazeData, linearSmp, (float4)(pos, 1.f)).x;
-                    float2 flow = read_imagef(flowData, linearSmp, (float4)(pos, 1.f)).xy;
+                    float gaze = read_imagef(gazeData, linearSmp, (float4)(pos, 1.f)).x / 384.f;
+                    float2 flow = read_imagef(flowData, linearSmp, (float4)(pos, 1.f)).xy / 100.f ;
+                    // TODO: normalization/scaling
+//                    flow.x /= 450.794;
                     switch(filters.x) // color mapping
                     {
                     case 0: tfColor = read_imagef(volData, linearSmp, (float4)(pos, 1.f)); break;
@@ -703,6 +739,18 @@ __kernel void volumeRender(  __read_only image3d_t volData
         t = t_exit;
     }
 #endif  // ESS
+
+//    pos = camPos + (t-offset - 2.f*stepSize)*rayDir;
+//    tfColor = read_imagef(volData, linearSmp, (float4)(pos, 1.f));
+//    tfColor.xyz = background.xyz; // - tfColor.xyz;
+//    opacity = 1.f;
+//    result.xyz = result.xyz - tfColor.xyz * opacity * (1.f - alpha);
+//    alpha = alpha + opacity * (1.f - alpha);
+    if (checkEdges(pos, bbox_bl, bbox_tr, (float3)(1.f / volRes.x, 1.f / volRes.y, 1.f / volRes.z)))
+    {
+        result.xyz = (float3)(0.f);
+        opacity = 1.f;
+    }
 
     // visualize empty space skipping
     if (showEss)
