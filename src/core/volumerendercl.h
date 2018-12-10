@@ -67,6 +67,8 @@ public:
         , TF1
         , TF2
         , FILTERS
+        , DATA_SCALING
+        , STRIDE
     };
 
     // mipmap down-scaling metric
@@ -293,6 +295,22 @@ public:
      * @param value 0: none, 1: gaze, 2: flow magnitude, 3: flow direction
      */
     void setFilters(int id, uint value);
+
+    /**
+     * @brief setDataScaling
+     * @param id
+     * @param value
+     */
+    void setDataScaling(int id, float value);
+
+    /**
+     * @brief setStride
+     * @param stride
+     */
+    void setStride(uint stride);
+    const std::vector<float> &getDataRangeMins();
+    const std::vector<float> &getDataRangeMaxs();
+
 private:
     /**
      * @brief Generate coarse grained volume bricks that can be used for ESS.
@@ -399,6 +417,7 @@ private:
     bool _useImgESS;
     std::string _currentDevice;
     cl_uint4 _filters;
+    cl_float4 _data_scaling;
 
     DatRawReader _dr;
 };

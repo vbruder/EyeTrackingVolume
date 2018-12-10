@@ -434,6 +434,8 @@ __kernel void volumeRender(  __read_only image3d_t volData
                            , __read_only image1d_t tf1
                            , __read_only image1d_t tf2
                            , const uint4 filters
+                           , const float4 data_scaling
+                           , const uint stride
                            )
 {
     int2 globalId = (int2)(get_global_id(0), get_global_id(1));
@@ -622,7 +624,7 @@ __kernel void volumeRender(  __read_only image3d_t volData
             pos = camPos + (t-offset)*rayDir;
             pos = pos * 0.5f + 0.5f;    // normalize to [0,1]
 
-            if (convert_int(pos.z * 1000) % 30 != 0)
+            if (convert_int(pos.z * 1000) % stride != 0)
             {
                 t += stepSize;
                 continue;
@@ -670,8 +672,8 @@ __kernel void volumeRender(  __read_only image3d_t volData
                 else if (get_image_channel_order(volData) == CLK_RGBA)
                 {
                     // eye tracking: color mapping
-                    float gaze = read_imagef(gazeData, linearSmp, (float4)(pos, 1.f)).x / 384.f;
-                    float2 flow = read_imagef(flowData, linearSmp, (float4)(pos, 1.f)).xy / 100.f ;
+                    float gaze = read_imagef(gazeData, linearSmp, (float4)(pos, 1.f)).x / data_scaling.x;
+                    float2 flow = read_imagef(flowData, linearSmp, (float4)(pos, 1.f)).xy / (float2)(data_scaling.yz);
                     // TODO: normalization/scaling
 //                    flow.x /= 450.794;
                     switch(filters.x) // color mapping
@@ -686,22 +688,22 @@ __kernel void volumeRender(  __read_only image3d_t volData
                     {
                     case 0: break;
                     case 1: tfColor.w = read_imagef(tffData, linearSmp, gaze).w; break;
-                    case 2: tfColor.w = read_imagef(tf2, linearSmp, flow.x).w; break;
-                    case 3: tfColor.w = read_imagef(tf1, linearSmp, flow.y).w; break;
+                    case 2: tfColor.w = read_imagef(tf1, linearSmp, flow.x).w; break;
+                    case 3: tfColor.w = read_imagef(tf2, linearSmp, flow.y).w; break;
                     }
                     switch(filters.z) // color mapping
                     {
                     case 0: break;
                     case 1: tfColor.w *= read_imagef(tffData, linearSmp, gaze).w; break;
-                    case 2: tfColor.w *= read_imagef(tf2, linearSmp, flow.x).w; break;
-                    case 3: tfColor.w *= read_imagef(tf1, linearSmp, flow.y).w; break;
+                    case 2: tfColor.w *= read_imagef(tf1, linearSmp, flow.x).w; break;
+                    case 3: tfColor.w *= read_imagef(tf2, linearSmp, flow.y).w; break;
                     }
                     switch(filters.w) // color mapping
                     {
                     case 0: break;
                     case 1: tfColor.w *= read_imagef(tffData, linearSmp, gaze).w; break;
-                    case 2: tfColor.w *= read_imagef(tf2, linearSmp, flow.x).w; break;
-                    case 3: tfColor.w *= read_imagef(tf1, linearSmp, flow.y).w; break;
+                    case 2: tfColor.w *= read_imagef(tf1, linearSmp, flow.x).w; break;
+                    case 3: tfColor.w *= read_imagef(tf2, linearSmp, flow.y).w; break;
                     }
                 }
                 // RG: 2D vector, map magnitude to alpha

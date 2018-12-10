@@ -1240,6 +1240,25 @@ void VolumeRenderWidget::setBackgroundColor(const QColor col)
     this->updateView();
 }
 
+/**
+ * @brief VolumeRenderWidget::setStride
+ * @param stride
+ */
+void VolumeRenderWidget::setStride(const int stride)
+{
+    _volumerender.setStride(static_cast<unsigned int>(stride));
+    this->updateView();
+}
+
+/**
+ * @brief VolumeRenderWidget::setStride
+ * @param stride
+ */
+void VolumeRenderWidget::setDataScaling(const int id, const float scaling)
+{
+    _volumerender.setDataScaling(id, scaling);
+    this->updateView();
+}
 
 /**
  * @brief VolumeRenderWidget::setBBox
@@ -1271,6 +1290,14 @@ const std::array<double, 256> & VolumeRenderWidget::getHistogram(unsigned int ti
     return _volumerender.getHistogram(timestep);
 }
 
+/**
+ * @brief VolumeRenderWidget::getDataRangeMaxs
+ * @return
+ */
+const std::vector<float> & VolumeRenderWidget::getDataRangeMaxs()
+{
+    return _volumerender.getDataRangeMaxs();
+}
 
 /**
  * @brief VolumeRenderWidget::calcFPS

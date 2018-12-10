@@ -134,6 +134,9 @@ public slots:
     void reloadKernels();
 
     const std::array<double, 256> &getHistogram(unsigned int timestep = 0);
+    void setStride(const int stride);
+    void setDataScaling(const int id, const float scaling);
+    const std::vector<float> &getDataRangeMaxs();
 signals:
     void fpsChanged(double);
     void frameSizeChanged(QSize);

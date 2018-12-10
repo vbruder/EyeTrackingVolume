@@ -184,6 +184,8 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
         _raycastKernel.setArg(BBOX_BL, cl_float3{{-1.f, -1.f, -1.f}});
         _raycastKernel.setArg(BBOX_TR, cl_float3{{1.f, 1.f, 1.f}});
         _raycastKernel.setArg(FILTERS, _filters);
+        _raycastKernel.setArg(DATA_SCALING, cl_float4{{1.f, 1.f, 1.f, 1.f}});
+        _raycastKernel.setArg(STRIDE, 30u);
 
         _genBricksKernel = cl::Kernel(program, "generateBricks");
         _downsamplingKernel = cl::Kernel(program, "downsampling");
@@ -763,6 +765,28 @@ const std::array<double, 256> & VolumeRenderCL::getHistogram(unsigned int timest
 }
 
 /**
+ * @brief VolumeRenderCL::getDataRangeMins
+ * @return
+ */
+const std::vector<float> & VolumeRenderCL::getDataRangeMins()
+{
+    if (!_dr.has_data())
+        throw std::invalid_argument("Data not available.");
+    return _dr.properties().min_values;
+}
+
+/**
+ * @brief VolumeRenderCL::getDataRangeMaxs
+ * @return
+ */
+const std::vector<float> & VolumeRenderCL::getDataRangeMaxs()
+{
+    if (!_dr.has_data())
+        throw std::invalid_argument("Data not available.");
+    return _dr.properties().max_values;
+}
+
+/**
  * @brief VolumeRenderCL::setTransferFunction
  * @param tff
  */
@@ -973,6 +997,36 @@ void VolumeRenderCL::setBackground(std::array<float, 4> color)
     } catch (cl::Error err) { logCLerror(err); }
 }
 
+/**
+ * @brief VolumeRenderCL::setDataScaling
+ * @param id
+ * @param value
+ */
+void VolumeRenderCL::setDataScaling(int id, float value)
+{
+    switch(id)
+    {
+    case 0: _data_scaling.x = value; break;
+    case 1: _data_scaling.y = value; break;
+    case 2: _data_scaling.z = value; break;
+    case 3: _data_scaling.w = value; break;
+    default: throw std::invalid_argument("Invalid data scaling id.");
+    }
+    try {
+        _raycastKernel.setArg(DATA_SCALING, _data_scaling);
+    } catch (cl::Error err) { logCLerror(err); }
+}
+
+/**
+ * @brief VolumeRenderCL::setBackground
+ * @param color
+ */
+void VolumeRenderCL::setStride(uint stride)
+{
+    try {
+        _raycastKernel.setArg(STRIDE, stride);
+    } catch (cl::Error err) { logCLerror(err); }
+}
 
 /**
  * @brief VolumeRenderCL::getLastExecTime

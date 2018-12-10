@@ -57,6 +57,8 @@ void DatRawReader::read_files(const std::string &file_name)
         }
         this->_raw_data.clear();
         this->_histograms.clear();
+        this->_prop.min_values.clear();
+        this->_prop.max_values.clear();
 
         size_t id = 0;
         for (const auto &n : _prop.raw_file_names)
@@ -310,14 +312,20 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
         // read data as a block:
         std::vector<char> raw_timestep;
         raw_timestep.resize(_prop.raw_file_size);
-        std::array<double, 256> histo;
-        histo.fill(0.);
-        // second histogram if RG two channel data
-        std::array<double, 256> histo2;
-        histo2.fill(0.);
-        bool twoHisto = false;
+        std::vector<std::array<double, 256>> histos;
+        std::vector<float> min_values;
+        std::vector<float> max_values;
+        size_t numChannels = 1;
         if (_prop.image_channel_order.at(id) == "RG")
-            twoHisto = true;
+            numChannels = 2;
+        for (size_t i = 0; i < numChannels; ++i)
+        {
+            std::array<double, 256> histo;
+            histo.fill(0.);
+            histos.push_back(histo);
+            min_values.push_back(std::numeric_limits<float>::max());
+            max_values.push_back(std::numeric_limits<float>::min());
+        }
 
         // if float precision: change endianness to little endian
         if (_prop.format.at(id) == "FLOAT")
@@ -334,23 +342,24 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
                 // FIXME: assuming normalized values [0,1] here...
                 size_t bin = static_cast<size_t>(round(value * 256.f));
                 bin = std::min(bin, 255ul);
-                if (twoHisto && (i%2 == 0))
-                    #pragma omp atomic
-                    histo2.at(bin) += 1.;
-                else
-                    #pragma omp atomic
-                    histo.at(bin) += 1.;
-//                histo.at(bin) += 1.;
-                #pragma omp atomic write
-                _prop.min_value = std::min(_prop.min_value, value);
-                #pragma omp atomic write
-                _prop.max_value = std::max(_prop.max_value, value);
+                for (size_t j = 0; j < numChannels; ++j)
+                {
+                    if (i%(j+1) == 0)
+                    {
+                        #pragma omp atomic
+                        histos.at(j).at(bin) += 1.;
+                        #pragma omp atomic write
+                        min_values.at(j) = std::min(min_values.at(j), value);
+                        #pragma omp atomic write
+                        max_values.at(j) = std::max(max_values.at(j), value);
+                    }
+                }
                 char *memp = reinterpret_cast<char*>(&floatdata.at(i));
                 for (size_t j = 0; j < 4; ++j)
                     raw_timestep.at(i*4 + j) = (*(memp + j));
             }
-            std::cout << "Data range: [" << _prop.min_value << ".." << _prop.max_value
-                      << "]" <<std::endl;
+            std::cout << "Data range: [" << min_values.back() << ".."
+                      << max_values.back() << "]" << std::endl;
         }
         else    // UCHAR and USHORT should be ok
         {
@@ -359,23 +368,29 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
             #pragma omp parallel for
             for (size_t i = 0; i < raw_timestep.size(); ++i)
             {
-                float value = static_cast<float>( static_cast<unsigned char>(raw_timestep.at(i)));
+                float value = static_cast<float>(static_cast<unsigned char>(raw_timestep.at(i)));
                 assert(value >= 0.f && value <= 255.f);
-                #pragma omp atomic write
-                _prop.min_value = std::min(_prop.min_value, value);
-                #pragma omp atomic write
-                _prop.max_value = std::max(_prop.max_value, value);
-                if (twoHisto && (i%2 == 0))
-                    #pragma omp atomic
-                    histo2.at(static_cast<size_t>(value)) += 1.;
-                else
-                    #pragma omp atomic
-                    histo.at(static_cast<size_t>(value)) += 1.;
+                for (size_t j = 0; j < numChannels; ++j)
+                {
+                    if (i%(j+1) == 0)
+                    {
+                        #pragma omp atomic
+                        histos.at(j).at(static_cast<size_t>(value)) += 1.;
+                        #pragma omp atomic write
+                        min_values.at(j) = std::min(min_values.at(j), value);
+                        #pragma omp atomic write
+                        max_values.at(j) = std::max(max_values.at(j), value);
+                    }
+                }
             }
         }
-        _histograms.push_back(std::move(histo));
-        if (twoHisto)
-            _histograms.push_back(std::move(histo2));
+        for (auto &a : histos)
+            _histograms.push_back(std::move(a));
+        for (auto &a : min_values)
+            _prop.min_values.push_back(a);
+        for (auto &a : max_values)
+            _prop.max_values.push_back(a);
+
         _raw_data.push_back(std::move(raw_timestep));
         if (!is)
             throw std::runtime_error("Error reading " + raw_file_name);

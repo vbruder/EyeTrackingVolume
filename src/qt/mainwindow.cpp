@@ -117,6 +117,12 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->cbIllum, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
             ui->volumeRenderWidget, &VolumeRenderWidget::setIllumination);
     connect(ui->pbBgColor, &QPushButton::released, this, &MainWindow::chooseBackgroundColor);
+    connect(ui->sldStride, &QSlider::valueChanged,
+            ui->volumeRenderWidget, &VolumeRenderWidget::setStride);
+    connect(ui->sldScaleGaze, &QSlider::valueChanged, this, &MainWindow::setScaleGaze);
+    connect(ui->sldScaleMag, &QSlider::valueChanged, this, &MainWindow::setScaleMag);
+    connect(ui->sldScaleAngle, &QSlider::valueChanged, this, &MainWindow::setScaleAngle);
+
     // check boxes
     connect(ui->chbLinear, &QCheckBox::toggled,
             ui->volumeRenderWidget, &VolumeRenderWidget::setLinearInterpolation);
@@ -337,6 +343,33 @@ void MainWindow::updateTransferFunctionFromGradientStops1(QGradientStops stops)
 void MainWindow::updateTransferFunctionFromGradientStops2(QGradientStops stops)
 {
     ui->volumeRenderWidget->updateTransferFunction(stops, 2);
+}
+
+/**
+ * @brief MainWindow::setScaleGaze
+ * @param scaling
+ */
+void MainWindow::setScaleGaze(int scaling)
+{
+    ui->volumeRenderWidget->setDataScaling(0, static_cast<float>(scaling));
+}
+
+/**
+ * @brief MainWindow::setScaleMag
+ * @param scaling
+ */
+void MainWindow::setScaleMag(int scaling)
+{
+    ui->volumeRenderWidget->setDataScaling(1, static_cast<float>(scaling));
+}
+
+/**
+ * @brief MainWindow::setScaleAngle
+ * @param scaling
+ */
+void MainWindow::setScaleAngle(int scaling)
+{
+    ui->volumeRenderWidget->setDataScaling(2, static_cast<float>(scaling));
 }
 
 /**
@@ -709,29 +742,38 @@ void MainWindow::finishedLoading()
     ui->volumeRenderWidget->updateView();
 
     // gaze histo
+    ui->sldScaleGaze->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(1)));
     std::array<double, 256> histo =
             ui->volumeRenderWidget->getHistogram(1u);
-    double maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    double maxVal =  *std::max_element(histo.begin() + 1, histo.end());
+    double elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
     QVector<qreal> qhisto;
     for (auto &a : histo)
-        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
+    {
+        qreal val = a / elements;
+        qhisto.push_back(val);   // normalize to range [0,1]
+    }
     ui->tf0->setHistogram(qhisto);
 
-    // flow direction
-    histo = ui->volumeRenderWidget->getHistogram(3u);
-    maxVal = *std::max_element(histo.begin() + 1, histo.end());
-    qhisto.clear();
-    for (auto &a : histo)
-        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
-    ui->tf1->setHistogram(qhisto);
-
-    // flow magnitude
+    // flow direction (angle)
+    ui->sldScaleAngle->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(2)));
     histo = ui->volumeRenderWidget->getHistogram(2u);
     maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
     qhisto.clear();
     for (auto &a : histo)
-        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
+        qhisto.push_back(a / elements);   // normalize to range [0,1]
     ui->tf2->setHistogram(qhisto);
+
+    // flow magnitude
+    ui->sldScaleMag->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(3)));
+    histo = ui->volumeRenderWidget->getHistogram(3u);
+    maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
+    qhisto.clear();
+    for (auto &a : histo)
+        qhisto.push_back(a / elements * 10.);   // normalize to range [0,1]
+    ui->tf1->setHistogram(qhisto);
     updateClippingSliders();
 }
 

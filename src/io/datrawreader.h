@@ -43,8 +43,8 @@ struct Properties
     std::vector<std::string> image_channel_order = {{""}};
     unsigned int time_series = {1u};
     // data range for float normalization: TODO: add to kernel
-    float min_value = std::numeric_limits<float>::max();
-    float max_value = std::numeric_limits<float>::min();
+    std::vector<float> min_values = {std::numeric_limits<float>::max()};
+    std::vector<float> max_values = {std::numeric_limits<float>::min()};
 
     const std::string to_string() const
     {
