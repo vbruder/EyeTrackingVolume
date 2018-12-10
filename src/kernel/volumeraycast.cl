@@ -382,7 +382,7 @@ bool approxEq2(float2 a, float2 b, float delta)
 
 bool checkEdges(float3 pos, float3 boxMin, float3 boxMax, float3 voxLen)
 {
-    voxLen *= 3.f;
+    voxLen *= 2.f;
     boxMin = boxMin*0.5f + 0.5f;
     boxMax = boxMax*0.5f + 0.5f;
 
@@ -757,7 +757,7 @@ __kernel void volumeRender(  __read_only image3d_t volData
 //    alpha = alpha + opacity * (1.f - alpha);
     if (checkEdges(pos, bbox_bl, bbox_tr, (float3)(1.f / volRes.x, 1.f / volRes.y, 1.f / volRes.z)))
     {
-        result.xyz = (float3)(0.f);
+        result.xyz = (float3)(0.9f);
         opacity = 1.f;
     }
 
