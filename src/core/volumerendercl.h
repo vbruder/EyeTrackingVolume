@@ -69,6 +69,8 @@ public:
         , FILTERS
         , DATA_SCALING
         , STRIDE
+        , PICK_COORD
+        , PICKED_ITEM_OUT
     };
 
     // mipmap down-scaling metric
@@ -124,7 +126,7 @@ public:
      * @param height The image height in pixels, used as one dimension of the global thread size.
      * @param t time series id, defaults to 0 if no time series
      */
-     void runRaycast(const size_t width, const size_t height, const size_t t = 0);
+     float runRaycast(const size_t width, const size_t height, const size_t t = 0);
 
      /**
       * @brief Run the actual OpenCL volume raycasting kernel without OpenGL context shring.
@@ -311,6 +313,8 @@ public:
     const std::vector<float> &getDataRangeMins();
     const std::vector<float> &getDataRangeMaxs();
 
+    void picking(int x, int y);
+    std::vector<unsigned char> renderSlice(unsigned int id);
 private:
     /**
      * @brief Generate coarse grained volume bricks that can be used for ESS.
@@ -397,6 +401,7 @@ private:
     cl::Kernel _raycastKernel;
     cl::Kernel _genBricksKernel;
     cl::Kernel _downsamplingKernel;
+    cl::Kernel _sliceKernel;
 
     std::vector<cl::Image3D> _volumesMem;
     std::vector<cl::Image3D> _bricksMem;
@@ -409,6 +414,7 @@ private:
     cl::Image2D _outputMemNoGL;
     cl::Image2D _outputHitMem;
     cl::Image2D _inputHitMem;
+    cl::Buffer _pickedItemMem;
 
     bool _volLoaded;
     double _lastExecTime;

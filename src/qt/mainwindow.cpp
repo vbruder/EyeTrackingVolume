@@ -122,6 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->sldScaleGaze, &QSlider::valueChanged, this, &MainWindow::setScaleGaze);
     connect(ui->sldScaleMag, &QSlider::valueChanged, this, &MainWindow::setScaleMag);
     connect(ui->sldScaleAngle, &QSlider::valueChanged, this, &MainWindow::setScaleAngle);
+    connect(ui->sldTimeScaling, &QSlider::valueChanged, this, &MainWindow::setScaleTime);
 
     // check boxes
     connect(ui->chbLinear, &QCheckBox::toggled,
@@ -188,6 +189,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->statusBar->addPermanentWidget(&_statusLabel);
     connect(ui->volumeRenderWidget, &VolumeRenderWidget::frameSizeChanged,
             this, &MainWindow::setStatusText);
+    connect(ui->volumeRenderWidget, &VolumeRenderWidget::pickedTimestepChanged,
+            this, &MainWindow::setPickedTimestep);
 
     connect(&_loopTimer, &QTimer::timeout, this, &MainWindow::nextTimestep);
 
@@ -370,6 +373,20 @@ void MainWindow::setScaleMag(int scaling)
 void MainWindow::setScaleAngle(int scaling)
 {
     ui->volumeRenderWidget->setDataScaling(2, static_cast<float>(scaling));
+}
+
+/**
+ * @brief MainWindow::setScaleTime
+ * @param scaling
+ */
+void MainWindow::setScaleTime(int scaling)
+{
+    float scale = static_cast<float>(scaling);
+    if (scale <= 100)
+        scale = scale / 100;
+    else
+        scale = 1.f + (scale - 100) / 10;
+    ui->volumeRenderWidget->setDataScaling(3, scale);
 }
 
 /**
@@ -727,6 +744,26 @@ void MainWindow::setStatusText()
     _statusLabel.setText(status);
 }
 
+/**
+ * @brief MainWindow::setPickedTimestep
+ */
+void MainWindow::setPickedTimestep(float timestep)
+{
+    unsigned int id = static_cast<unsigned int>(round(timestep *
+                                                      ui->volumeRenderWidget->getVolumeResolution().z()));
+//    qDebug() << step;
+    // TODO: spawn floating qimage with frame (blended video frame + gaze map)
+    QDockWidget* dock = new QDockWidget("Frame " + QString::number(id), this);
+    dock->setAllowedAreas(Qt::BottomDockWidgetArea);
+    this->addDockWidget(Qt::BottomDockWidgetArea, dock);
+    dock->setFloating(true);
+
+    QImage frame = ui->volumeRenderWidget->getSliceImage(id);
+    QLabel *imgDisplayLabel = new QLabel("");
+    imgDisplayLabel->setPixmap(QPixmap::fromImage(frame));
+    imgDisplayLabel->adjustSize();
+    dock->setWidget(imgDisplayLabel);
+}
 
 /**
  * @brief MainWindow::finishedLoading

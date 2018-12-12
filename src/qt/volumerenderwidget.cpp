@@ -81,6 +81,7 @@ VolumeRenderWidget::VolumeRenderWidget(QWidget *parent)
     , _logView(false)
 	, _logInteraction(false)
     , _contRendering(false)
+    , _zScale(1.f)
 {
     this->setMouseTracking(true);
 }
@@ -375,8 +376,14 @@ void VolumeRenderWidget::paintGL()
         try
         {
             if (_useGL)
-                _volumerender.runRaycast(floor(this->size().width() * _imgSamplingRate),
+            {
+                float pickedZ = _volumerender.runRaycast(floor(this->size().width() * _imgSamplingRate),
                                          floor(this->size().height()* _imgSamplingRate), _timestep);
+                if (pickedZ >= 0)
+                {
+                    emit pickedTimestepChanged(pickedZ);
+                }
+            }
             else
             {
                 std::vector<float> d;
@@ -903,8 +910,13 @@ void VolumeRenderWidget::cleanup()
  */
 void VolumeRenderWidget::mousePressEvent(QMouseEvent *event)
 {
-    // nothing yet
     _lastLocalCursorPos = event->pos();
+    // select object
+    if (event->buttons() & Qt::RightButton)
+    {
+        _volumerender.picking(event->pos().x(), event->pos().y());
+        updateView();
+    }
 }
 
 
@@ -979,7 +991,7 @@ void VolumeRenderWidget::updateView(const float dx, const float dy)
     _rotQuat = _rotQuat * QQuaternion::fromAxisAndAngle(rotAxis, -angle);
 
     QMatrix4x4 viewMat;
-//    viewMat.scale(QVector3D(1,1,1./_zScale));
+    viewMat.scale(QVector3D(1.f, 1.f, 1.f/_zScale));
     viewMat.rotate(_rotQuat);
 
     _coordViewMX.setToIdentity();
@@ -1256,7 +1268,10 @@ void VolumeRenderWidget::setStride(const int stride)
  */
 void VolumeRenderWidget::setDataScaling(const int id, const float scaling)
 {
-    _volumerender.setDataScaling(id, scaling);
+    if (id == 3)
+        _zScale = scaling;
+    else
+        _volumerender.setDataScaling(id, scaling);
     this->updateView();
 }
 
@@ -1417,4 +1432,27 @@ void VolumeRenderWidget::setFilter(int id, int value)
 {
     _volumerender.setFilters(id, static_cast<unsigned int>(value));
     updateView();
+}
+
+/**
+ * @brief VolumeRenderWidget::getSliceData
+ * @param id
+ * @return
+ */
+QImage VolumeRenderWidget::getSliceImage(unsigned int id)
+{
+    std::vector<uchar> v = _volumerender.renderSlice(id);
+    int w = static_cast<int>(_volumerender.getResolution().at(0));
+    int h = static_cast<int>(_volumerender.getResolution().at(1));
+    QImage manImage(w, h, QImage::Format_RGBA8888);
+    for (int j = 0; j < h; ++j)
+    {
+        for (int i = 0; i < w; ++i)
+        {
+            size_t id = static_cast<size_t>((j*w + i) * 4);
+            QRgb value = qRgba(v[id], v[id+1], v[id+2], v[id+3]);
+            manImage.setPixel(i, j, value);
+        }
+    }
+    return manImage;
 }

@@ -62,6 +62,7 @@ VolumeRenderCL::VolumeRenderCL() :
   , _useGL(true)
   , _useImgESS(false)
   , _filters({{0,0,0,0}})
+  , _data_scaling({{1,1,1,1}})
 {
 }
 
@@ -186,9 +187,15 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
         _raycastKernel.setArg(FILTERS, _filters);
         _raycastKernel.setArg(DATA_SCALING, cl_float4{{1.f, 1.f, 1.f, 1.f}});
         _raycastKernel.setArg(STRIDE, 30u);
+        _raycastKernel.setArg(PICK_COORD, cl_int2{{-1, -1}});
+        _pickedItemMem = cl::Buffer(_contextCL, CL_MEM_WRITE_ONLY, sizeof(cl_float4));
+        _raycastKernel.setArg(PICKED_ITEM_OUT, _pickedItemMem);
 
         _genBricksKernel = cl::Kernel(program, "generateBricks");
         _downsamplingKernel = cl::Kernel(program, "downsampling");
+
+        _sliceKernel = cl::Kernel(program, "sliceRender");
+        _sliceKernel.setArg(4, cl_float4{{1.f, 1.f, 1.f, 1.f}});
     }
     catch (cl::Error err)
     {
@@ -448,10 +455,10 @@ void VolumeRenderCL::updateOutputImg(const size_t width, const size_t height, GL
  * @brief VolumeRenderCL::runRaycast
  * @param imgSize
  */
-void VolumeRenderCL::runRaycast(const size_t width, const size_t height, const size_t t)
+float VolumeRenderCL::runRaycast(const size_t width, const size_t height, const size_t t)
 {
     if (!this->_volLoaded)
-        return;
+        return -1.f;
     try // opencl scope
     {
         setMemObjectsRaycast(t);
@@ -468,6 +475,11 @@ void VolumeRenderCL::runRaycast(const size_t width, const size_t height, const s
         _queueCL.enqueueReleaseGLObjects(&memObj);
         _queueCL.finish();    // global sync
 
+        // picking
+        cl_float4 pickedItem = {{0.f, 0.f, -1.f, 0.f}};
+        _queueCL.enqueueReadBuffer(_pickedItemMem, CL_TRUE, 0, sizeof(cl_float4), &pickedItem);
+        picking(-1, -1); // reset picking
+
         if (_useImgESS)
         {
             // swap hit test buffers
@@ -483,6 +495,7 @@ void VolumeRenderCL::runRaycast(const size_t width, const size_t height, const s
         ndrEvt.getProfilingInfo(CL_PROFILING_COMMAND_END, &end);
         _lastExecTime = static_cast<double>(end - start)*1e-9;
 //        std::cout << "Kernel time: " << _lastExecTime << std::endl << std::endl;
+        return pickedItem.z;
 #endif
     }
     catch (cl::Error err)
@@ -1014,6 +1027,7 @@ void VolumeRenderCL::setDataScaling(int id, float value)
     }
     try {
         _raycastKernel.setArg(DATA_SCALING, _data_scaling);
+        _sliceKernel.setArg(4, _data_scaling);
     } catch (cl::Error err) { logCLerror(err); }
 }
 
@@ -1116,4 +1130,65 @@ void VolumeRenderCL::setBBox(float bl_x, float bl_y, float bl_z,
         _raycastKernel.setArg(BBOX_BL, bl);
         _raycastKernel.setArg(BBOX_TR, tr);
     } catch (cl::Error err) { logCLerror(err); }
+}
+
+/**
+ * @brief VolumeRenderCL::picking
+ * @param x
+ * @param y
+ */
+void VolumeRenderCL::picking(int x, int y)
+{
+    if (!this->hasData())
+        return;
+    try {
+        cl_int2 pickCoords = {{x, y}};
+        _raycastKernel.setArg(PICK_COORD, pickCoords);
+    } catch (cl::Error err) { logCLerror(err); }
+}
+
+/**
+ * @brief VolumeRenderCL::renderSlice
+ * @param id
+ * @return
+ */
+std::vector<unsigned char> VolumeRenderCL::renderSlice(unsigned int id)
+{
+    if (id >= _dr.properties().volume_res.at(2))
+        throw std::invalid_argument("Invalid slice id.");
+
+    size_t width = _dr.properties().volume_res.at(0);
+    size_t height = _dr.properties().volume_res.at(1);
+
+    std::vector<unsigned char> sliceData(width*height * 4);
+
+    try // opencl scope
+    {
+        cl::ImageFormat format;
+        format.image_channel_order = CL_RGBA;
+        format.image_channel_data_type = CL_UNORM_INT8;
+
+        cl::Image2D sliceMem = cl::Image2D(_contextCL, CL_MEM_WRITE_ONLY, format, width, height);
+        _sliceKernel.setArg(VOLUME, _volumesMem.at(0));
+        _sliceKernel.setArg(1, sliceMem);
+        _sliceKernel.setArg(2, _volumesMem.at(1));
+        _sliceKernel.setArg(3, id);
+
+        cl::NDRange globalThreads(width, height);
+        cl::Event ndrEvt;
+        _queueCL.enqueueNDRangeKernel(
+                    _sliceKernel, cl::NullRange, globalThreads, cl::NullRange, nullptr, &ndrEvt);
+        _queueCL.finish();
+
+        std::array<size_t, 3> origin = {{0, 0, 0}};
+        std::array<size_t, 3> region = {{width, height, 1}};
+        _queueCL.enqueueReadImage(sliceMem, CL_TRUE, origin, region, 0, 0, sliceData.data());
+        _queueCL.flush();    // global sync
+    }
+    catch (cl::Error err)
+    {
+        logCLerror(err);
+    }
+
+    return sliceData;
 }

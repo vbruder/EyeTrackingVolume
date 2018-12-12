@@ -436,6 +436,8 @@ __kernel void volumeRender(  __read_only image3d_t volData
                            , const uint4 filters
                            , const float4 data_scaling
                            , const uint stride
+                           , const int2 pickCoord
+                           , __global float4 *pickedItemOut
                            )
 {
     int2 globalId = (int2)(get_global_id(0), get_global_id(1));
@@ -480,6 +482,12 @@ __kernel void volumeRender(  __read_only image3d_t volData
     imgCoords -= get_global_size(0) > get_global_size(1) ?
                         (float2)(1.0f, aspectRatio) : (float2)(aspectRatio, 1.0);
     imgCoords.y *= -1.f;   // flip y coord
+
+    if (all(texCoords.xy == (int2)(0)) && all(pickCoord.xy == (int2)(-1)))
+    {
+        pickedItemOut[0] = (float4)(-1);
+        return;
+    }
 
     // z position of view plane is -1.0 to fit the cube to the screen quad when axes are aligned,
     // zoom is -1 and the data set is uniform in each dimension
@@ -684,26 +692,33 @@ __kernel void volumeRender(  __read_only image3d_t volData
                     case 3: tfColor.xyz = read_imagef(tffData, linearSmp, flow.y).xyz; break;
                     }
                     // eye tracking: opacity filters
-                    switch(filters.y) // color mapping
+                    switch(filters.y)
                     {
                     case 0: break;
                     case 1: tfColor.w = read_imagef(tffData, linearSmp, gaze).w; break;
                     case 2: tfColor.w = read_imagef(tf1, linearSmp, flow.x).w; break;
                     case 3: tfColor.w = read_imagef(tf2, linearSmp, flow.y).w; break;
                     }
-                    switch(filters.z) // color mapping
+                    switch(filters.z)
                     {
                     case 0: break;
                     case 1: tfColor.w *= read_imagef(tffData, linearSmp, gaze).w; break;
                     case 2: tfColor.w *= read_imagef(tf1, linearSmp, flow.x).w; break;
                     case 3: tfColor.w *= read_imagef(tf2, linearSmp, flow.y).w; break;
                     }
-                    switch(filters.w) // color mapping
+                    switch(filters.w)
                     {
                     case 0: break;
                     case 1: tfColor.w *= read_imagef(tffData, linearSmp, gaze).w; break;
                     case 2: tfColor.w *= read_imagef(tf1, linearSmp, flow.x).w; break;
                     case 3: tfColor.w *= read_imagef(tf2, linearSmp, flow.y).w; break;
+                    }
+
+                    if (all(pickCoord.xy == texCoords.xy) && tfColor.w > 0.1f)
+                    {
+                        float4 picked = (float4)(pos, 0);
+                        pickedItemOut[0] = picked;
+                        return;
                     }
                 }
                 // RG: 2D vector, map magnitude to alpha
@@ -757,8 +772,7 @@ __kernel void volumeRender(  __read_only image3d_t volData
 //    alpha = alpha + opacity * (1.f - alpha);
     if (checkEdges(pos, bbox_bl, bbox_tr, (float3)(1.f / volRes.x, 1.f / volRes.y, 1.f / volRes.z)))
     {
-        result.xyz = (float3)(0.9f);
-        opacity = 1.f;
+        result.xyz = result.xyz - (float3)(0.2f) * (1.f - alpha);
     }
 
     // visualize empty space skipping
@@ -859,4 +873,27 @@ __kernel void downsampling(  __read_only image3d_t volData
     value /= (float)(voxPerCell.x * voxPerCell.y * voxPerCell.z);
 
     write_imagef(volDataLowRes, (int4)(coord, 0), (float4)(value));
+}
+
+
+//************************** Slice render ***************************
+
+__kernel void sliceRender(  __read_only image3d_t volData
+                          , __write_only image2d_t outData
+                          , __read_only image3d_t gazeData
+                          , const uint sliceId
+                          , const float4 data_scaling
+                          )
+{
+    uint2 id = (uint2)(get_global_id(0), get_global_id(1));
+    int2 texCoords = (int2)(get_global_id(0), get_global_id(1));// (get_global_size(1)-1) - get_global_id(1));
+    int4 coord = (int4)(id.x, id.y, sliceId, 0);
+    float4 pos = (float4)(convert_float3(coord.xyz) / convert_float3(get_image_dim(volData).xyz), 0);
+
+    float4 videoColor = read_imagef(volData, nearestSmp, pos);
+    float gaze = min(1.f, read_imagef(gazeData, nearestSmp, pos).x / data_scaling.x);
+
+    float4 color = videoColor * ((float4)(0.25f) + (float4)(0.75f)*gaze);
+    color.w = 1.0;
+    write_imagef(outData, texCoords, color);
 }

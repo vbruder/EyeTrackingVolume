@@ -88,6 +88,8 @@ protected slots:
     void setScaleGaze(int scaling);
     void setScaleMag(int scaling);
     void setScaleAngle(int scaling);
+    void setScaleTime(int scaling);
+    void setPickedTimestep(float timestep);
 protected:
     void dragEnterEvent(QDragEnterEvent *ev) Q_DECL_OVERRIDE;
     void dropEvent(QDropEvent *ev) Q_DECL_OVERRIDE;
