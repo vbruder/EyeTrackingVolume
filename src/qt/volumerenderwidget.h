@@ -138,11 +138,12 @@ public slots:
     void setDataScaling(const int id, const float scaling);
     const std::vector<float> &getDataRangeMaxs();
     QImage getSliceImage(unsigned int id);
+    void clearFrames();
 signals:
     void fpsChanged(double);
     void frameSizeChanged(QSize);
     void timeSeriesLoaded(int);
-    void pickedTimestepChanged(float);
+    void pickedTimestepChanged(float, QColor);
 
 protected:
     // Qt specific QOpenGLWidget methods
@@ -227,4 +228,6 @@ private:
 	QElapsedTimer _timer;
     float _zScale;
     float _pickedZ;
+    QVector<QColor> _colorTable;
+    int _frameCnt;
 };

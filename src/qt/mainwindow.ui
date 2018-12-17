@@ -468,12 +468,15 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Flow angle</string>
+        <string>Flow magnitude</string>
        </property>
       </widget>
      </item>
      <item row="6" column="1">
       <widget class="QSlider" name="sldScaleAngle">
+       <property name="minimum">
+        <number>1</number>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -496,12 +499,12 @@
        </item>
        <item>
         <property name="text">
-         <string>Flow magnitude</string>
+         <string>Flow angle</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flow angle</string>
+         <string>Flow magnitude</string>
         </property>
        </item>
       </widget>
@@ -536,12 +539,12 @@
        </item>
        <item>
         <property name="text">
-         <string>Flow magnitude</string>
+         <string>Flow angle</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flow angle</string>
+         <string>Flow magnitude</string>
         </property>
        </item>
       </widget>
@@ -560,12 +563,12 @@
        </item>
        <item>
         <property name="text">
-         <string>Flow magnitude</string>
+         <string>Flow angle</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flow angle</string>
+         <string>Flow magnitude</string>
         </property>
        </item>
       </widget>
@@ -585,6 +588,9 @@
      </item>
      <item row="10" column="1">
       <widget class="QSlider" name="sldScaleGaze">
+       <property name="minimum">
+        <number>1</number>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -599,7 +605,7 @@
         </sizepolicy>
        </property>
        <property name="text">
-        <string>Flow magnitude</string>
+        <string>Flow angle</string>
        </property>
       </widget>
      </item>
@@ -617,12 +623,12 @@
        </item>
        <item>
         <property name="text">
-         <string>Flow magnitude</string>
+         <string>Flow angle</string>
         </property>
        </item>
        <item>
         <property name="text">
-         <string>Flow angle</string>
+         <string>Flow magnitude</string>
         </property>
        </item>
       </widget>
@@ -652,6 +658,9 @@
      </item>
      <item row="8" column="1">
       <widget class="QSlider" name="sldScaleMag">
+       <property name="minimum">
+        <number>1</number>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -671,11 +680,14 @@
        <property name="value">
         <number>100</number>
        </property>
+       <property name="tracking">
+        <bool>true</bool>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
        <property name="tickPosition">
-        <enum>QSlider::TicksBelow</enum>
+        <enum>QSlider::NoTicks</enum>
        </property>
        <property name="tickInterval">
         <number>20</number>

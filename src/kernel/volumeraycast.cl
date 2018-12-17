@@ -438,6 +438,8 @@ __kernel void volumeRender(  __read_only image3d_t volData
                            , const uint stride
                            , const int2 pickCoord
                            , __global float4 *pickedItemOut
+                           , __global float4 *frame_borders
+                           , const uint frame_cnt
                            )
 {
     int2 globalId = (int2)(get_global_id(0), get_global_id(1));
@@ -687,7 +689,13 @@ __kernel void volumeRender(  __read_only image3d_t volData
                     switch(filters.x) // color mapping
                     {
                     case 0: tfColor = read_imagef(volData, linearSmp, (float4)(pos, 1.f)); break;
-                    case 1: tfColor.xyz = read_imagef(tffData, linearSmp, gaze).xyz; break;
+                    case 1:
+                        {
+                            tfColor.xyz = read_imagef(tffData, linearSmp, gaze).xyz;
+                            gradient = -gradientCentralDiff(gazeData, (float4)(pos, 1.f));
+                            tfColor.xyz = illumination((float4)(pos, 1.f), tfColor.xyz, -rayDir, gradient.xyz);
+                            break;
+                        }
                     case 2: tfColor.xyz = read_imagef(tffData, linearSmp, flow.x).xyz; break;
                     case 3: tfColor.xyz = read_imagef(tffData, linearSmp, flow.y).xyz; break;
                     }
@@ -770,9 +778,22 @@ __kernel void volumeRender(  __read_only image3d_t volData
 //    opacity = 1.f;
 //    result.xyz = result.xyz - tfColor.xyz * opacity * (1.f - alpha);
 //    alpha = alpha + opacity * (1.f - alpha);
-    if (checkEdges(pos, bbox_bl, bbox_tr, (float3)(1.f / volRes.x, 1.f / volRes.y, 1.f / volRes.z)))
+    if (checkEdges(pos, bbox_bl, bbox_tr, voxLen))
     {
         result.xyz = result.xyz - (float3)(0.2f) * (1.f - alpha);
+    }
+
+    float3 volResf = convert_float3(volRes.xyz);
+    for (int i = 0; i < frame_cnt; ++i)
+    {
+        float4 frame = frame_borders[i];
+        float z = frame.x * 2.f - 1.f;
+        float os = 0.05f;
+        if (pos.z >= voxLen.z && pos.z < bbox_tr.z - voxLen.z &&
+            !checkEdges(pos, (float3)(bbox_bl.xy, z), (float3)(bbox_tr.xy, z+os), length(voxLen)/2.f))
+        {
+            result.xyz = result.xyz - ((float3)(1) - frame.yzw) * (1.f - alpha);
+        }
     }
 
     // visualize empty space skipping

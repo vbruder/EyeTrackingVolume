@@ -62,7 +62,8 @@ VolumeRenderCL::VolumeRenderCL() :
   , _useGL(true)
   , _useImgESS(false)
   , _filters({{0,0,0,0}})
-  , _data_scaling({{1,1,1,1}})
+  , _dataScaling({{1,1,1,1}})
+  , _frameCnt(0u)
 {
 }
 
@@ -190,6 +191,9 @@ void VolumeRenderCL::initKernel(const std::string fileName, const std::string bu
         _raycastKernel.setArg(PICK_COORD, cl_int2{{-1, -1}});
         _pickedItemMem = cl::Buffer(_contextCL, CL_MEM_WRITE_ONLY, sizeof(cl_float4));
         _raycastKernel.setArg(PICKED_ITEM_OUT, _pickedItemMem);
+        _frameBorders = cl::Buffer(_contextCL, CL_MEM_READ_ONLY, sizeof(cl_float4)*32);
+        _raycastKernel.setArg(FRAME_BORDERS, _frameBorders);
+        _raycastKernel.setArg(FRAME_CNT, _frameCnt);
 
         _genBricksKernel = cl::Kernel(program, "generateBricks");
         _downsamplingKernel = cl::Kernel(program, "downsampling");
@@ -1019,15 +1023,15 @@ void VolumeRenderCL::setDataScaling(int id, float value)
 {
     switch(id)
     {
-    case 0: _data_scaling.x = value; break;
-    case 1: _data_scaling.y = value; break;
-    case 2: _data_scaling.z = value; break;
-    case 3: _data_scaling.w = value; break;
+    case 0: _dataScaling.x = value; break;
+    case 1: _dataScaling.y = value; break;
+    case 2: _dataScaling.z = value; break;
+    case 3: _dataScaling.w = value; break;
     default: throw std::invalid_argument("Invalid data scaling id.");
     }
     try {
-        _raycastKernel.setArg(DATA_SCALING, _data_scaling);
-        _sliceKernel.setArg(4, _data_scaling);
+        _raycastKernel.setArg(DATA_SCALING, _dataScaling);
+        _sliceKernel.setArg(4, _dataScaling);
     } catch (cl::Error err) { logCLerror(err); }
 }
 
@@ -1191,4 +1195,34 @@ std::vector<unsigned char> VolumeRenderCL::renderSlice(unsigned int id)
     }
 
     return sliceData;
+}
+
+/**
+ * @brief VolumeRenderCL::addFrame
+ */
+void VolumeRenderCL::addFrame(float z, float r, float g, float b)
+{
+    if (_frameCnt >= 32)
+        return;
+    cl_float4 frame = {{z,r,g,b}};
+    try {
+        _queueCL.enqueueWriteBuffer(_frameBorders, CL_TRUE, _frameCnt*sizeof(cl_float4),
+                                    sizeof(cl_float4), &frame);
+//        _raycastKernel.setArg(FRAME_BORDERS, _frameBorders);
+        _raycastKernel.setArg(FRAME_CNT, ++_frameCnt);
+    } catch (cl::Error err) { logCLerror(err); }
+}
+
+
+/**
+ * @brief VolumeRenderCL::clearFrames
+ */
+void VolumeRenderCL::clearFrames()
+{
+    _frameCnt = 0;
+    try {
+        _frameBorders = cl::Buffer(_contextCL, CL_MEM_READ_ONLY, sizeof(cl_float4)*32);
+        _raycastKernel.setArg(FRAME_BORDERS, _frameBorders);
+        _raycastKernel.setArg(FRAME_CNT, _frameCnt);
+    } catch (cl::Error err) { logCLerror(err); }
 }

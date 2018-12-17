@@ -82,8 +82,21 @@ VolumeRenderWidget::VolumeRenderWidget(QWidget *parent)
 	, _logInteraction(false)
     , _contRendering(false)
     , _zScale(1.f)
+    , _frameCnt(0)
 {
     this->setMouseTracking(true);
+    _colorTable.append(QColor(31,120,180));
+    _colorTable.append(QColor(51,160,44));
+    _colorTable.append(QColor(227,26,28));
+    _colorTable.append(QColor(255,127,0));
+    _colorTable.append(QColor(106,61,154));
+    _colorTable.append(QColor(177,89,40));
+    _colorTable.append(QColor(166,206,227));
+    _colorTable.append(QColor(178,223,138));
+    _colorTable.append(QColor(251,154,153));
+    _colorTable.append(QColor(253,191,111));
+    _colorTable.append(QColor(202,178,214));
+    _colorTable.append(QColor(255,255,153));
 }
 
 
@@ -381,7 +394,10 @@ void VolumeRenderWidget::paintGL()
                                          floor(this->size().height()* _imgSamplingRate), _timestep);
                 if (pickedZ >= 0)
                 {
-                    emit pickedTimestepChanged(pickedZ);
+                    QColor c = _colorTable.at(_frameCnt++ % 11);
+                    emit pickedTimestepChanged(pickedZ, c);
+                    _volumerender.addFrame(pickedZ, c.redF(), c.greenF(), c.blueF());
+                    update();
                 }
             }
             else
@@ -1455,4 +1471,13 @@ QImage VolumeRenderWidget::getSliceImage(unsigned int id)
         }
     }
     return manImage;
+}
+
+/**
+ * @brief VolumeRenderWidget::clearFrames
+ */
+void VolumeRenderWidget::clearFrames()
+{
+    _volumerender.clearFrames();
+    updateView();
 }

@@ -246,7 +246,8 @@ void MainWindow::keyPressEvent(QKeyEvent *event)
         case Qt::Key_S: ui->volumeRenderWidget->updateView(+0.000f,+factor); break;
         case Qt::Key_Right:
         case Qt::Key_D: ui->volumeRenderWidget->updateView(+factor, 0.000f); break;
-        // TODO: zoom
+        // TODO: add zoom
+        case Qt::Key_Escape: ui->volumeRenderWidget->clearFrames(); break;
     }
     event->accept();
 }
@@ -747,18 +748,27 @@ void MainWindow::setStatusText()
 /**
  * @brief MainWindow::setPickedTimestep
  */
-void MainWindow::setPickedTimestep(float timestep)
+void MainWindow::setPickedTimestep(float timestep, QColor color)
 {
     unsigned int id = static_cast<unsigned int>(round(timestep *
                                                       ui->volumeRenderWidget->getVolumeResolution().z()));
-//    qDebug() << step;
-    // TODO: spawn floating qimage with frame (blended video frame + gaze map)
     QDockWidget* dock = new QDockWidget("Frame " + QString::number(id), this);
     dock->setAllowedAreas(Qt::BottomDockWidgetArea);
     this->addDockWidget(Qt::BottomDockWidgetArea, dock);
     dock->setFloating(true);
 
     QImage frame = ui->volumeRenderWidget->getSliceImage(id);
+    for (int i = 0; i < frame.width(); ++i)
+    {
+        frame.setPixelColor(i, 0, color);
+        frame.setPixelColor(i, frame.height() - 1, color);
+    }
+    for (int i = 0; i < frame.height(); ++i)
+    {
+        frame.setPixelColor(0, i, color);
+        frame.setPixelColor(frame.width() - 1, i, color);
+    }
+
     QLabel *imgDisplayLabel = new QLabel("");
     imgDisplayLabel->setPixmap(QPixmap::fromImage(frame));
     imgDisplayLabel->adjustSize();
@@ -780,8 +790,7 @@ void MainWindow::finishedLoading()
 
     // gaze histo
     ui->sldScaleGaze->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(1)));
-    std::array<double, 256> histo =
-            ui->volumeRenderWidget->getHistogram(1u);
+    std::array<double, 256> histo = ui->volumeRenderWidget->getHistogram(1u);
     double maxVal =  *std::max_element(histo.begin() + 1, histo.end());
     double elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
     QVector<qreal> qhisto;
@@ -795,21 +804,21 @@ void MainWindow::finishedLoading()
     // flow direction (angle)
     ui->sldScaleAngle->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(2)));
     histo = ui->volumeRenderWidget->getHistogram(2u);
-    maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    maxVal = *std::max_element(histo.begin() + 2, histo.end() - 2);
     elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
     qhisto.clear();
     for (auto &a : histo)
-        qhisto.push_back(a / elements);   // normalize to range [0,1]
+        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
     ui->tf2->setHistogram(qhisto);
 
     // flow magnitude
     ui->sldScaleMag->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(3)));
     histo = ui->volumeRenderWidget->getHistogram(3u);
-    maxVal = *std::max_element(histo.begin() + 1, histo.end());
+    maxVal = *std::max_element(histo.begin() + 1, histo.end() - 1);
     elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
     qhisto.clear();
     for (auto &a : histo)
-        qhisto.push_back(a / elements * 10.);   // normalize to range [0,1]
+        qhisto.push_back(a / maxVal); // / elements * 100.);   // normalize to range [0,1]
     ui->tf1->setHistogram(qhisto);
     updateClippingSliders();
 }

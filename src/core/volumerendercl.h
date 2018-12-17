@@ -71,6 +71,8 @@ public:
         , STRIDE
         , PICK_COORD
         , PICKED_ITEM_OUT
+        , FRAME_BORDERS
+        , FRAME_CNT
     };
 
     // mipmap down-scaling metric
@@ -315,6 +317,8 @@ public:
 
     void picking(int x, int y);
     std::vector<unsigned char> renderSlice(unsigned int id);
+    void addFrame(float z, float r, float g, float b);
+    void clearFrames();
 private:
     /**
      * @brief Generate coarse grained volume bricks that can be used for ESS.
@@ -415,6 +419,7 @@ private:
     cl::Image2D _outputHitMem;
     cl::Image2D _inputHitMem;
     cl::Buffer _pickedItemMem;
+    cl::Buffer _frameBorders;
 
     bool _volLoaded;
     double _lastExecTime;
@@ -423,7 +428,8 @@ private:
     bool _useImgESS;
     std::string _currentDevice;
     cl_uint4 _filters;
-    cl_float4 _data_scaling;
+    cl_float4 _dataScaling;
+    cl_uint _frameCnt;
 
     DatRawReader _dr;
 };
