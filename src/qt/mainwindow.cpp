@@ -753,6 +753,10 @@ void MainWindow::setPickedTimestep(float timestep, QColor color)
     unsigned int id = static_cast<unsigned int>(round(timestep *
                                                       ui->volumeRenderWidget->getVolumeResolution().z()));
     QDockWidget* dock = new QDockWidget("Frame " + QString::number(id), this);
+//    QLabel *label = new QLabel("Frame " + QString::number(id), dock);
+//    label->setStyleSheet("color: black");
+//    dock->setTitleBarWidget(label);
+    dock->setStyleSheet("background: " + color.name());
     dock->setAllowedAreas(Qt::BottomDockWidgetArea);
     this->addDockWidget(Qt::BottomDockWidgetArea, dock);
     dock->setFloating(true);

@@ -342,24 +342,23 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
                 // FIXME: assuming normalized values [0,1] here...
                 size_t bin = static_cast<size_t>(round(value * 256.f));
                 bin = std::min(bin, 255ul);
-                for (size_t j = 0; j < numChannels; ++j)
-                {
-                    if (i%(j+1) == 0)
-                    {
-                        #pragma omp atomic
-                        histos.at(j).at(bin) += 1.;
-                        #pragma omp atomic write
-                        min_values.at(j) = std::min(min_values.at(j), value);
-                        #pragma omp atomic write
-                        max_values.at(j) = std::max(max_values.at(j), value);
-                    }
-                }
+//                for (size_t j = 0; j < numChannels; ++j)
+//                {
+                size_t k = 0;
+                if (numChannels == 2 && (i%2) == 0)
+                    k = 1;
+
+#pragma omp atomic
+                histos.at(k).at(bin) += 1.;
+#pragma omp atomic write
+                min_values.at(k) = std::min(min_values.at(k), value);
+#pragma omp atomic write
+                max_values.at(k) = std::max(max_values.at(k), value);
+
                 char *memp = reinterpret_cast<char*>(&floatdata.at(i));
                 for (size_t j = 0; j < 4; ++j)
                     raw_timestep.at(i*4 + j) = (*(memp + j));
             }
-            std::cout << "Data range: [" << min_values.back() << ".."
-                      << max_values.back() << "]" << std::endl;
         }
         else    // UCHAR and USHORT should be ok
         {
@@ -387,9 +386,15 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
         for (auto &a : histos)
             _histograms.push_back(std::move(a));
         for (auto &a : min_values)
+        {
             _prop.min_values.push_back(a);
+            std::cout << "Min: " << a << std::endl;
+        }
         for (auto &a : max_values)
+        {
             _prop.max_values.push_back(a);
+            std::cout << "Max: " << a << std::endl;
+        }
 
         _raw_data.push_back(std::move(raw_timestep));
         if (!is)

@@ -896,6 +896,68 @@ __kernel void downsampling(  __read_only image3d_t volData
     write_imagef(volDataLowRes, (int4)(coord, 0), (float4)(value));
 }
 
+float4 getColor(float value)
+{
+    float3 colorLUT[5];
+
+//    colorLUT[0] = (float3)(0.0,0.0,1.0) ;
+//    colorLUT[1] = (float3)(0.0,1.0,1.0) ;
+//    colorLUT[2] = (float3)(0.0,1.0,0.0);
+//    colorLUT[3] = (float3)(1.0,1.0,0.0);
+//    colorLUT[4] = (float3)(1.0,0.0,0.0);
+    ///
+
+    //colorLUT[0] = float3(0.0,0.0,0.0) ;
+    //colorLUT[1] = float3(0.0,0.0,0.0) ;
+    //colorLUT[2] = float3(1.0,0.0,0.0);
+    //colorLUT[3] = float3(1.0,0.0,0.0);
+    //colorLUT[4] = float3(1.0,1.0,0.0);
+
+
+    colorLUT[0] = (float3)(0.168,0.513,0.729) ;
+    colorLUT[1] = (float3)(0.67,0.866,0.643) ;
+    colorLUT[2] = (float3)(1.0,1.0,0.749);
+    colorLUT[3] = (float3)(0.99,0.682,0.38);
+    colorLUT[4] = (float3)(0.843,0.098,0.11);
+    ///
+
+    float rValue = 0.0;
+    float gValue= 0.0;
+    float bValue =0.0;
+    float alpha =0.0;
+
+    if (value <= 0.25)
+    {
+            alpha = (value-0.0)/0.25;
+            rValue = alpha*colorLUT[1].x+(1.0-alpha)*colorLUT[0].x;
+            gValue = alpha*colorLUT[1].y+(1.0-alpha)*colorLUT[0].y;
+            bValue = alpha*colorLUT[1].z+(1.0-alpha)*colorLUT[0].z;
+    }
+    else if (value <= 0.5)
+    {
+            alpha = (value-0.25)/0.25;
+            rValue = alpha*colorLUT[2].x+(1.0-alpha)*colorLUT[1].x;
+            gValue = alpha*colorLUT[2].y+(1.0-alpha)*colorLUT[1].y;
+            bValue = alpha*colorLUT[2].z+(1.0-alpha)*colorLUT[1].z;
+    }
+    else if (value <= 0.75)
+    {
+            alpha = (value-0.5)/0.25;
+            rValue = alpha*colorLUT[3].x+(1.0-alpha)*colorLUT[2].x;
+            gValue = alpha*colorLUT[3].y+(1.0-alpha)*colorLUT[2].y;
+            bValue = alpha*colorLUT[3].z+(1.0-alpha)*colorLUT[2].z;
+    }
+    else if (value <= 1.0)
+    {
+            alpha = (value-0.75)/0.25;
+            rValue = alpha*colorLUT[4].x+(1.0-alpha)*colorLUT[3].x;
+            gValue = alpha*colorLUT[4].y+(1.0-alpha)*colorLUT[3].y;
+            bValue = alpha*colorLUT[4].z+(1.0-alpha)*colorLUT[3].z;
+    }
+
+    return (float4)(rValue,gValue,bValue,1.0);
+}
+
 
 //************************** Slice render ***************************
 
@@ -913,8 +975,10 @@ __kernel void sliceRender(  __read_only image3d_t volData
 
     float4 videoColor = read_imagef(volData, nearestSmp, pos);
     float gaze = min(1.f, read_imagef(gazeData, nearestSmp, pos).x / data_scaling.x);
-
-    float4 color = videoColor * ((float4)(0.25f) + (float4)(0.75f)*gaze);
+    float4 heat = getColor(gaze);
+    float sgaze = sqrt(gaze);
+    gaze += sgaze*2.f;
+    float4 color = mix(videoColor*0.75f, heat, min(0.85f, gaze));
     color.w = 1.0;
     write_imagef(outData, texCoords, color);
 }
