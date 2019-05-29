@@ -429,36 +429,6 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_2">
     <layout class="QGridLayout" name="gridLayout_5">
-     <item row="9" column="0" colspan="2">
-      <widget class="TransferFunctionWidget" name="tf1" native="true"/>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_15">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="text">
-        <string>Frame stride</string>
-       </property>
-      </widget>
-     </item>
-     <item row="13" column="0">
-      <widget class="QComboBox" name="cbInterpolation">
-       <item>
-        <property name="text">
-         <string>Linear</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Quad</string>
-        </property>
-       </item>
-      </widget>
-     </item>
      <item row="6" column="0">
       <widget class="QLabel" name="label_12">
        <property name="sizePolicy">
@@ -472,14 +442,28 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QSlider" name="sldScaleAngle">
-       <property name="minimum">
-        <number>1</number>
+     <item row="14" column="2">
+      <widget class="QPushButton" name="pbResetTff">
+       <property name="text">
+        <string>Reset</string>
        </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
+      </widget>
+     </item>
+     <item row="9" column="0" colspan="3">
+      <widget class="TransferFunctionWidget" name="tf1" native="true"/>
+     </item>
+     <item row="14" column="0">
+      <widget class="QComboBox" name="cbInterpolation">
+       <item>
+        <property name="text">
+         <string>Linear</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Quad</string>
+        </property>
+       </item>
       </widget>
      </item>
      <item row="4" column="0">
@@ -490,70 +474,6 @@
        <item>
         <property name="text">
          <string>Video</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Gaze</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Flow angle</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Flow magnitude</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="1" column="0" colspan="2">
-      <widget class="colorwidgets::ColorWheel" name="colorWheel" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>200</height>
-        </size>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QComboBox" name="cbFilter2">
-       <item>
-        <property name="text">
-         <string>none</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Gaze</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Flow angle</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Flow magnitude</string>
-        </property>
-       </item>
-      </widget>
-     </item>
-     <item row="5" column="1">
-      <widget class="QComboBox" name="cbFilter3">
-       <item>
-        <property name="text">
-         <string>none</string>
         </property>
        </item>
        <item>
@@ -586,31 +506,30 @@
        </property>
       </widget>
      </item>
-     <item row="10" column="1">
-      <widget class="QSlider" name="sldScaleGaze">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="0">
-      <widget class="QLabel" name="label_13">
+     <item row="1" column="0" colspan="3">
+      <widget class="colorwidgets::ColorWheel" name="colorWheel" native="true">
        <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
          <horstretch>0</horstretch>
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="text">
-        <string>Flow angle</string>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>200</height>
+        </size>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
-      <widget class="QComboBox" name="cbFilter1">
+     <item row="7" column="0" colspan="3">
+      <widget class="TransferFunctionWidget" name="tf2" native="true"/>
+     </item>
+     <item row="12" column="0" colspan="3">
+      <widget class="TransferFunctionWidget" name="tf0" native="true"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QComboBox" name="cbFilter2">
        <item>
         <property name="text">
          <string>none</string>
@@ -633,7 +552,80 @@
        </item>
       </widget>
      </item>
-     <item row="2" column="1">
+     <item row="3" column="0">
+      <widget class="QLabel" name="label_16">
+       <property name="text">
+        <string>Time scaling</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="label_13">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Flow angle</string>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="label_15">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Frame stride</string>
+       </property>
+      </widget>
+     </item>
+     <item row="14" column="1">
+      <widget class="QCheckBox" name="chbLog">
+       <property name="text">
+        <string>Log scaling</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item row="10" column="1" colspan="2">
+      <widget class="QSlider" name="sldScaleGaze">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="1" colspan="2">
+      <widget class="QSlider" name="sldScaleMag">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="1" colspan="2">
+      <widget class="QSlider" name="sldScaleAngle">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1" colspan="2">
       <widget class="QSlider" name="sldStride">
        <property name="minimum">
         <number>1</number>
@@ -646,30 +638,7 @@
        </property>
       </widget>
      </item>
-     <item row="12" column="0" colspan="2">
-      <widget class="TransferFunctionWidget" name="tf0" native="true"/>
-     </item>
-     <item row="13" column="1">
-      <widget class="QPushButton" name="pbResetTff">
-       <property name="text">
-        <string>Reset</string>
-       </property>
-      </widget>
-     </item>
-     <item row="8" column="1">
-      <widget class="QSlider" name="sldScaleMag">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="0" colspan="2">
-      <widget class="TransferFunctionWidget" name="tf2" native="true"/>
-     </item>
-     <item row="3" column="1">
+     <item row="3" column="1" colspan="2">
       <widget class="QSlider" name="sldTimeScaling">
        <property name="minimum">
         <number>1</number>
@@ -694,11 +663,52 @@
        </property>
       </widget>
      </item>
-     <item row="3" column="0">
-      <widget class="QLabel" name="label_16">
-       <property name="text">
-        <string>Time scaling</string>
-       </property>
+     <item row="4" column="1" colspan="2">
+      <widget class="QComboBox" name="cbFilter1">
+       <item>
+        <property name="text">
+         <string>none</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Gaze</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Flow angle</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Flow magnitude</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+     <item row="5" column="1" colspan="2">
+      <widget class="QComboBox" name="cbFilter3">
+       <item>
+        <property name="text">
+         <string>none</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Gaze</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Flow angle</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Flow magnitude</string>
+        </property>
+       </item>
       </widget>
      </item>
     </layout>

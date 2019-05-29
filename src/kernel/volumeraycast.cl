@@ -907,18 +907,19 @@ float4 getColor(float value)
 //    colorLUT[4] = (float3)(1.0,0.0,0.0);
     ///
 
-    //colorLUT[0] = float3(0.0,0.0,0.0) ;
-    //colorLUT[1] = float3(0.0,0.0,0.0) ;
-    //colorLUT[2] = float3(1.0,0.0,0.0);
-    //colorLUT[3] = float3(1.0,0.0,0.0);
-    //colorLUT[4] = float3(1.0,1.0,0.0);
+    // viridis
+    colorLUT[0] = (float3)(0.26700401, 0.00487433, 0.32941519);
+    colorLUT[1] = (float3)(0.22973926, 0.32236127, 0.54570633);
+    colorLUT[2] = (float3)(0.12756771, 0.56694891, 0.55055551);
+    colorLUT[3] = (float3)(0.3692142 , 0.78888793, 0.38291438);
+    colorLUT[4] = (float3)(0.99324789, 0.90615657, 0.1439362);
 
-
-    colorLUT[0] = (float3)(0.168,0.513,0.729) ;
-    colorLUT[1] = (float3)(0.67,0.866,0.643) ;
-    colorLUT[2] = (float3)(1.0,1.0,0.749);
-    colorLUT[3] = (float3)(0.99,0.682,0.38);
-    colorLUT[4] = (float3)(0.843,0.098,0.11);
+    // rainbow
+    //colorLUT[0] = (float3)(0.168,0.513,0.729) ;
+    //colorLUT[1] = (float3)(0.67,0.866,0.643) ;
+    //colorLUT[2] = (float3)(1.0,1.0,0.749);
+    //colorLUT[3] = (float3)(0.99,0.682,0.38);
+    //colorLUT[4] = (float3)(0.843,0.098,0.11);
     ///
 
     float rValue = 0.0;
@@ -977,7 +978,7 @@ __kernel void sliceRender(  __read_only image3d_t volData
     float gaze = min(1.f, read_imagef(gazeData, nearestSmp, pos).x / data_scaling.x);
     float4 heat = getColor(gaze);
     float sgaze = sqrt(gaze);
-    gaze += sgaze*2.f;
+    gaze += sgaze*1.f;
     float4 color = mix(videoColor*0.75f, heat, min(0.85f, gaze));
     color.w = 1.0;
     write_imagef(outData, texCoords, color);

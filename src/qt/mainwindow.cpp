@@ -98,6 +98,8 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->actionRealoadKernel, &QAction::triggered,
             this, &MainWindow::updateTransferFunctionFromGradientStops);
 
+    connect(ui->chbLog, &QCheckBox::toggled, this, &MainWindow::updateHistograms);
+
     // future watcher for concurrent data loading
     _watcher = new QFutureWatcher<void>(this);
     connect(_watcher, &QFutureWatcher<void>::finished, this, &MainWindow::finishedLoading);
@@ -779,6 +781,61 @@ void MainWindow::setPickedTimestep(float timestep, QColor color)
     dock->setWidget(imgDisplayLabel);
 }
 
+void MainWindow::updateHistograms()
+{
+    // gaze histo
+    ui->sldScaleGaze->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(1)));
+    std::array<double, 256> histo = ui->volumeRenderWidget->getHistogram(1u);
+    double minVal = *std::min_element(histo.begin() + 0, histo.end());
+    double maxVal = *std::max_element(histo.begin() + 0, histo.end());
+//    double elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
+    QVector<qreal> qhisto;
+    for (auto &a : histo)
+    {
+//        qreal val = a / elements;
+//        qhisto.push_back(val);   // normalize to range [0,1]
+        if (ui->chbLog->isChecked())
+            qhisto.push_back(log(a - minVal) / log(maxVal));
+        else
+            qhisto.push_back(a / maxVal);
+    }
+    ui->tf0->setHistogram(qhisto);
+
+    // flow direction (angle)
+    ui->sldScaleAngle->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(2)));
+    histo = ui->volumeRenderWidget->getHistogram(2u);
+    minVal = *std::min_element(histo.begin() + 0, histo.end());
+    maxVal = *std::max_element(histo.begin() + 0, histo.end() - 0);
+//    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
+    qhisto.clear();
+    for (auto &a : histo)
+    {
+//        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
+        if (ui->chbLog->isChecked())
+            qhisto.push_back(log(a - minVal) / log(maxVal));
+        else
+            qhisto.push_back(a / maxVal);
+    }
+    ui->tf2->setHistogram(qhisto);
+
+    // flow magnitude
+    ui->sldScaleMag->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(3)));
+    histo = ui->volumeRenderWidget->getHistogram(3u);
+    minVal = *std::min_element(histo.begin() + 0, histo.end());
+    maxVal = *std::max_element(histo.begin() + 0, histo.end() - 0);
+//    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
+    qhisto.clear();
+    for (auto &a : histo)
+    {
+//        qhisto.push_back(a / maxVal); // / elements * 100.);   // normalize to range [0,1]
+        if (ui->chbLog->isChecked())
+            qhisto.push_back(log(a - minVal) / log(maxVal));
+        else
+            qhisto.push_back(a / maxVal);
+    }
+    ui->tf1->setHistogram(qhisto);
+}
+
 /**
  * @brief MainWindow::finishedLoading
  */
@@ -792,38 +849,7 @@ void MainWindow::finishedLoading()
     ui->volumeRenderWidget->setLoadingFinished(true);
     ui->volumeRenderWidget->updateView();
 
-    // gaze histo
-    ui->sldScaleGaze->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(1)));
-    std::array<double, 256> histo = ui->volumeRenderWidget->getHistogram(1u);
-    double maxVal =  *std::max_element(histo.begin() + 1, histo.end());
-    double elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
-    QVector<qreal> qhisto;
-    for (auto &a : histo)
-    {
-        qreal val = a / elements;
-        qhisto.push_back(val);   // normalize to range [0,1]
-    }
-    ui->tf0->setHistogram(qhisto);
-
-    // flow direction (angle)
-    ui->sldScaleAngle->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(2)));
-    histo = ui->volumeRenderWidget->getHistogram(2u);
-    maxVal = *std::max_element(histo.begin() + 2, histo.end() - 2);
-    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
-    qhisto.clear();
-    for (auto &a : histo)
-        qhisto.push_back(a / maxVal);   // normalize to range [0,1]
-    ui->tf2->setHistogram(qhisto);
-
-    // flow magnitude
-    ui->sldScaleMag->setMaximum(static_cast<int>(ui->volumeRenderWidget->getDataRangeMaxs().at(3)));
-    histo = ui->volumeRenderWidget->getHistogram(3u);
-    maxVal = *std::max_element(histo.begin() + 1, histo.end() - 1);
-    elements = std::accumulate(histo.begin(), histo.end(), 0.) / histo.size();
-    qhisto.clear();
-    for (auto &a : histo)
-        qhisto.push_back(a / maxVal); // / elements * 100.);   // normalize to range [0,1]
-    ui->tf1->setHistogram(qhisto);
+    updateHistograms();
     updateClippingSliders();
 }
 
@@ -832,18 +858,18 @@ void MainWindow::finishedLoading()
  */
 void MainWindow::updateClippingSliders()
 {
-    ui->sldClipRight->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
-    ui->sbClipRight->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
-    ui->sldClipLeft->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
-    ui->sbClipLeft->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().x()));
-    ui->sldClipFront->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
-    ui->sbClipFront->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
-    ui->sldClipBack->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
-    ui->sbClipBack->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().z()));
-    ui->sldClipBottom->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
-    ui->sbClipBottom->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
-    ui->sldClipTop->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
-    ui->sbClipTop->setMaximum(static_cast<int>(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sldClipRight->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sbClipRight->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sldClipLeft->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sbClipLeft->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().x()));
+    ui->sldClipFront->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sbClipFront->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sldClipBack->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sbClipBack->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().z()));
+    ui->sldClipBottom->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sbClipBottom->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sldClipTop->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().y()));
+    ui->sbClipTop->setMaximum(int(ui->volumeRenderWidget->getVolumeResolution().y()));
 
     ui->sldClipRight->setValue(ui->sldClipRight->maximum());
     ui->sldClipBack->setValue(ui->sldClipBack->maximum());

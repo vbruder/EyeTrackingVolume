@@ -90,6 +90,7 @@ protected slots:
     void setScaleAngle(int scaling);
     void setScaleTime(int scaling);
     void setPickedTimestep(float timestep, QColor color);
+    void updateHistograms();
 protected:
     void dragEnterEvent(QDragEnterEvent *ev) Q_DECL_OVERRIDE;
     void dropEvent(QDropEvent *ev) Q_DECL_OVERRIDE;

@@ -340,7 +340,7 @@ void DatRawReader::read_raw(const std::string raw_file_name, const size_t id)
                 endswap(&floatdata.at(i));
                 float value = floatdata.at(i); // / 218.347f; // FIXME: gaze data range
                 // FIXME: assuming normalized values [0,1] here...
-                size_t bin = static_cast<size_t>(round(value * 256.f));
+                size_t bin = static_cast<size_t>(round(value * 255.f));
                 bin = std::min(bin, 255ul);
 //                for (size_t j = 0; j < numChannels; ++j)
 //                {
