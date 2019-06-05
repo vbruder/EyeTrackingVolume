@@ -1,8 +1,7 @@
 # Description #
 
-An interactive, cross platform volume raycaster based on the OpenCL compute API.
-It features early ray termination, object and image order empty space skipping, local illumination, and various gradient based shading techniques.
-It can display volume (timeseries) data sets and uses the [Qt](https://www.qt.io) framework for the GUI. 
+Volume rendering system to visualize eye tracking data of people watching dynamic stimuli.
+For more detail check out the paper: https://vbruder.github.io/publication/dblp-confetra-bruder-kfwe-19/dblp-confetra-bruder-kfwe-19.pdf
 
 # Setup and build #
 
@@ -22,7 +21,8 @@ cd build
 cmake .. -DCMAKE_PREFIX_PATH=/path/to/Qt/install
 make -j `nproc`
 ```
-Make sure to replace the CMAKE_PREFIX_PATH with the path to your Qt install directory, e.g. ```/home/username/Qt/5.11.2/gcc_64/```
+Make sure to correctly setup the path to your Qt install directory.
+E.g., replace the CMAKE_PREFIX_PATH with ```/home/username/Qt/5.11.2/gcc_64/```
 
 # Confirmed to build/run on the following configurations #
 
@@ -37,13 +37,9 @@ Make sure to replace the CMAKE_PREFIX_PATH with the path to your Qt install dire
 
 ![2017-12-19-cham](https://bytebucket.org/theVall/basicvolumeraycaster/raw/6d3ef5483cd67d8a6416620887a19d36ca6e4d67/screenshots/2018-04-23-cham.png)
 
-# Planned changes/extensions #
-
-*  Out of core rendering for timeseries data on dGPUs.
-
 # License #
 
-Copyright (C) 2017-2018 Valentin Bruder vbruder@gmail.com
+Copyright (C) 2017-2019 Valentin Bruder vbruder@gmail.com
 
 This software is licensed under [LGPLv3+](https://www.gnu.org/licenses/lgpl-3.0.en.html).
 
